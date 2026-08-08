@@ -1,19 +1,21 @@
 /**
  * Navigation shell — bottom tab bar on phones (<768px), left nav rail on
- * tablet/desktop. 48px targets, safe-area aware.
+ * tablet/desktop. 48px targets, safe-area aware. Icons are poster-style
+ * line SVGs that tint with the active state.
  */
 import { NavLink, Outlet } from 'react-router-dom'
 import { t } from '../i18n/strings'
+import { Icon, type IconName } from '../components/Icons'
 
 const tabs = [
-  { to: '/today', key: 'tab.today', icon: '☀️' },
-  { to: '/orders', key: 'tab.orders', icon: '🧺' },
-  { to: '/customers', key: 'tab.customers', icon: '👥' },
-  { to: '/payments', key: 'tab.payments', icon: '💵' },
-  { to: '/more', key: 'tab.more', icon: '☰' },
+  { to: '/today', key: 'tab.today', icon: 'today' },
+  { to: '/orders', key: 'tab.orders', icon: 'orders' },
+  { to: '/customers', key: 'tab.customers', icon: 'customers' },
+  { to: '/payments', key: 'tab.payments', icon: 'payments' },
+  { to: '/more', key: 'tab.more', icon: 'more' },
 ] as const
 
-function TabItem({ to, label, icon, rail }: { to: string; label: string; icon: string; rail?: boolean }) {
+function TabItem({ to, label, icon, rail }: { to: string; label: string; icon: IconName; rail?: boolean }) {
   return (
     <NavLink
       to={to}
@@ -23,9 +25,7 @@ function TabItem({ to, label, icon, rail }: { to: string; label: string; icon: s
         } ${isActive ? 'text-primary-600' : 'text-ink-muted'}`
       }
     >
-      <span aria-hidden className={rail ? 'text-md' : 'text-base leading-none'}>
-        {icon}
-      </span>
+      <Icon name={icon} size={rail ? 22 : 24} className="shrink-0" />
       <span>{label}</span>
     </NavLink>
   )
