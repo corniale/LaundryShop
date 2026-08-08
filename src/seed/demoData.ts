@@ -18,6 +18,7 @@ import type {
   OrderStatus,
   PaymentMethod,
 } from '../data/types'
+import { clientConfig } from '../config/client.config'
 import { priceOrder } from '../domain/money'
 import { hashPin, generateSalt } from '../domain/pin'
 import { STATUS_ORDER } from '../domain/status'
@@ -54,7 +55,7 @@ export async function seedDemoData(): Promise<void> {
     currency: 'PHP',
     orderCodePrefix: 'ORD',
     nextOrderNumber: 1046,
-    locale: 'tl',
+    locale: clientConfig.defaultLocale,
     receiptFooter: 'Salamat po! Dalhin ang stub kapag kukunin.',
     createdAt: iso(new Date(today.getTime() - 35 * DAY)),
     schemaVersion: 1,
