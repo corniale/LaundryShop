@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['fonts/*.woff2', 'icons/*.png', 'icons/*.svg'],
+      includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
         name: 'Laundry Shop OS',
         short_name: 'Laundry',
