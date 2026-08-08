@@ -25,7 +25,7 @@ export interface ClientConfig {
 export const clientConfig: ClientConfig = {
   appName: 'Laundry Shop OS',
   defaultShopName: 'Bubbles Laundry Shop',
-  defaultLocale: 'tl',
+  defaultLocale: 'en',
   orderCodePrefix: 'ORD',
   currency: 'PHP',
   defaultServices: [

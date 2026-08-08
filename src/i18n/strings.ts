@@ -452,7 +452,9 @@ const strings = {
 
 export type StringKey = keyof typeof strings
 
-let currentLocale: Locale = 'tl'
+import { clientConfig } from '../config/client.config'
+
+let currentLocale: Locale = clientConfig.defaultLocale
 
 export function setLocale(locale: Locale) {
   currentLocale = locale

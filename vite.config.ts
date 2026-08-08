@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'Laundry Shop OS',
         short_name: 'Laundry',
-        description: 'Counter app para sa laundry shop — offline, walang subscription.',
+        description: 'Counter app for a laundry shop — offline, no subscription.',
         theme_color: '#0B7A8C',
         background_color: '#F2F9FA',
         display: 'standalone',
