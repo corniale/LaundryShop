@@ -1,0 +1,171 @@
+/** Shared UI primitives. No raw hex anywhere — tokens only. */
+import { type ReactNode, type ButtonHTMLAttributes, type InputHTMLAttributes, forwardRef } from 'react'
+
+// ── Button ────────────────────────────────────────────────────────
+
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
+
+const buttonStyles: Record<ButtonVariant, string> = {
+  primary: 'bg-primary-600 text-surface font-semibold active:bg-primary-800',
+  secondary: 'bg-wash-deep text-primary-800 font-semibold active:bg-primary-100',
+  danger: 'bg-danger-500 text-surface font-semibold active:bg-danger-700',
+  ghost: 'bg-transparent text-primary-600 font-semibold active:bg-primary-100',
+}
+
+export function Button({
+  variant = 'primary',
+  className = '',
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+  return (
+    <button
+      className={`min-h-touch rounded-input px-4 py-3 text-base disabled:opacity-40 ${buttonStyles[variant]} ${className}`}
+      {...props}
+    />
+  )
+}
+
+// ── Card ──────────────────────────────────────────────────────────
+
+export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      className={`rounded-card bg-surface shadow-card p-4 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ── Chip ──────────────────────────────────────────────────────────
+
+export function Chip({
+  children,
+  selected = false,
+  onClick,
+  className = '',
+}: {
+  children: ReactNode
+  selected?: boolean
+  onClick?: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-touch rounded-pill px-4 py-2 text-sm font-medium whitespace-nowrap border ${
+        selected
+          ? 'bg-primary-600 text-surface border-primary-600'
+          : 'bg-surface text-ink border-line'
+      } ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ── Field / Input ─────────────────────────────────────────────────
+
+export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-sm font-medium text-ink-muted">{label}</span>
+      {children}
+      {hint && <span className="mt-1 block text-xs text-ink-muted">{hint}</span>}
+    </label>
+  )
+}
+
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  function Input({ className = '', ...props }, ref) {
+    return (
+      <input
+        ref={ref}
+        className={`min-h-touch w-full rounded-input border border-line bg-surface px-3 py-2.5 text-base text-ink placeholder:text-ink-muted ${className}`}
+        {...props}
+      />
+    )
+  },
+)
+
+export function TextArea({ className = '', ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={`w-full rounded-input border border-line bg-surface px-3 py-2.5 text-base text-ink placeholder:text-ink-muted ${className}`}
+      rows={2}
+      {...props}
+    />
+  )
+}
+
+// ── Sheet (bottom on phones, right-side ≥768px) ───────────────────
+
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  wide = false,
+}: {
+  open: boolean
+  onClose: () => void
+  title: string
+  children: ReactNode
+  wide?: boolean
+}) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-primary-800/40" onClick={onClose} />
+      <div
+        className={`absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-card bg-wash pb-safe
+          md:inset-x-auto md:inset-y-0 md:right-0 md:max-h-none md:h-full md:rounded-none ${wide ? 'md:w-[560px]' : 'md:w-[440px]'}`}
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-wash px-4 py-3">
+          <h2 className="font-display text-md font-semibold">{title}</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="min-h-touch min-w-touch rounded-input text-ink-muted"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="p-4">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Empty state ───────────────────────────────────────────────────
+
+export function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-card bg-wash-deep px-6 py-10 text-center text-ink-muted">{children}</div>
+  )
+}
+
+// ── Stat figure (mono, large) ─────────────────────────────────────
+
+export function Stat({ label, value, tone }: { label: string; value: string; tone?: 'danger' | 'accent' | 'sun' }) {
+  const toneClass =
+    tone === 'danger' ? 'text-danger-700' : tone === 'accent' ? 'text-accent-700' : tone === 'sun' ? 'text-sun-700' : 'text-ink'
+  return (
+    <div className="rounded-card bg-surface p-3 shadow-card">
+      <div className="text-xs font-medium text-ink-muted">{label}</div>
+      <div className={`font-mono text-lg font-medium ${toneClass}`}>{value}</div>
+    </div>
+  )
+}
+
+// ── Sticky bottom action bar ──────────────────────────────────────
+
+export function ActionBar({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-30 -mx-4 border-t border-line bg-wash px-4 py-3 pb-safe">
+      {children}
+    </div>
+  )
+}
