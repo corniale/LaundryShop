@@ -215,9 +215,9 @@ export function OrdersScreen() {
                 aria-label={statusLabel(s)}
               >
                 <header className="flex items-center gap-2 px-2 py-2">
-                  <span className="h-3 w-3 rounded-pill" style={{ backgroundColor: STATUS_VAR[s] }} />
-                  <span className="font-display text-sm font-semibold">{statusLabel(s)}</span>
-                  <span className="ml-auto rounded-pill bg-surface px-2 py-0.5 font-mono text-xs font-medium">
+                  <span className="h-2.5 w-2.5 rounded-pill" style={{ backgroundColor: STATUS_VAR[s] }} />
+                  <span className="label-caps !text-ink">{statusLabel(s)}</span>
+                  <span className="ml-auto rounded-pill border border-line bg-surface px-2 py-0.5 font-mono text-xs font-medium">
                     {counts[s]}
                   </span>
                 </header>
@@ -229,7 +229,7 @@ export function OrdersScreen() {
                       <div
                         key={o.id}
                         onClick={() => navigate(`/orders/${o.id}`)}
-                        className="cursor-pointer rounded-input bg-surface p-3 shadow-card"
+                        className="cursor-pointer rounded-card border border-line bg-surface p-3 transition-colors duration-150 hover:border-ink-muted/40"
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="font-mono text-sm font-medium">{o.code}</span>

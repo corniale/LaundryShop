@@ -36,9 +36,10 @@ export default {
           500: 'var(--danger-500)',
           700: 'var(--danger-700)',
         },
+        'on-primary': 'var(--on-primary)',
       },
       fontFamily: {
-        display: ['Fredoka', 'system-ui', 'sans-serif'],
+        display: ['Syne', 'system-ui', 'sans-serif'],
         body: ['"Public Sans"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
@@ -52,8 +53,8 @@ export default {
         '2xl': ['2.5rem', { lineHeight: '1.15' }],
       },
       borderRadius: {
-        card: '20px',
-        input: '12px',
+        card: '4px',
+        input: '2px',
         pill: '999px',
       },
       boxShadow: {

@@ -6,9 +6,9 @@ import { type ReactNode, type ButtonHTMLAttributes, type InputHTMLAttributes, fo
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
 
 const buttonStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-600 text-surface font-semibold active:bg-primary-800',
-  secondary: 'bg-wash-deep text-primary-800 font-semibold active:bg-primary-100',
-  danger: 'bg-danger-500 text-surface font-semibold active:bg-danger-700',
+  primary: 'bg-primary-500 text-on-primary font-semibold active:bg-primary-300',
+  secondary: 'border border-line bg-surface text-ink font-semibold active:bg-wash-deep',
+  danger: 'bg-danger-700 text-surface font-semibold active:bg-danger-500',
   ghost: 'bg-transparent text-primary-600 font-semibold active:bg-primary-100',
 }
 
@@ -19,7 +19,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
   return (
     <button
-      className={`min-h-touch rounded-input px-4 py-3 text-base disabled:opacity-40 ${buttonStyles[variant]} ${className}`}
+      className={`min-h-touch rounded-input px-4 py-2.5 text-base transition-colors duration-150 disabled:opacity-40 ${buttonStyles[variant]} ${className}`}
       {...props}
     />
   )
@@ -31,7 +31,7 @@ export function Card({ children, className = '', onClick }: { children: ReactNod
   return (
     <div
       onClick={onClick}
-      className={`rounded-card bg-surface shadow-card p-4 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`rounded-card border border-line bg-surface p-3.5 ${onClick ? 'cursor-pointer transition-colors duration-150 hover:border-ink-muted/40' : ''} ${className}`}
     >
       {children}
     </div>
@@ -55,10 +55,10 @@ export function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-touch rounded-pill px-4 py-2 text-sm font-medium whitespace-nowrap border ${
+      className={`min-h-touch rounded-pill px-4 py-2 text-sm font-medium whitespace-nowrap border transition-colors duration-150 ${
         selected
-          ? 'bg-primary-600 text-surface border-primary-600'
-          : 'bg-surface text-ink border-line'
+          ? 'border-ink bg-ink text-wash'
+          : 'border-line bg-surface text-ink-muted hover:text-ink'
       } ${className}`}
     >
       {children}
@@ -71,7 +71,7 @@ export function Chip({
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-ink-muted">{label}</span>
+      <span className="label-caps mb-1.5 block">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-ink-muted">{hint}</span>}
     </label>
@@ -153,9 +153,9 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
   const toneClass =
     tone === 'danger' ? 'text-danger-700' : tone === 'accent' ? 'text-accent-700' : tone === 'sun' ? 'text-sun-700' : 'text-ink'
   return (
-    <div className="rounded-card bg-surface p-3 shadow-card">
-      <div className="text-xs font-medium text-ink-muted">{label}</div>
-      <div className={`font-mono text-lg font-medium ${toneClass}`}>{value}</div>
+    <div className="rounded-card border border-line bg-surface p-3">
+      <div className="label-caps">{label}</div>
+      <div className={`mt-0.5 font-mono text-lg font-medium ${toneClass}`}>{value}</div>
     </div>
   )
 }

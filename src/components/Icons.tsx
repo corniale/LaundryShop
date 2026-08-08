@@ -112,7 +112,7 @@ export function Icon({
       height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.9"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden

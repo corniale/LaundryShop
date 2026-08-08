@@ -1,42 +1,47 @@
 /*
  * Design tokens — the ONLY place hex values are allowed.
- * Palette: bubblegum laundromat. Powder-blue wash, deep navy ink,
- * bubblegum-pink primary, mint accent (detergent bottle), sun amber
- * reserved for the drying stage. Status colors still encode the
- * physical process: cold water → heat → fresh → put away.
+ * Editorial slate system: light ice-gray ground, hairline structure,
+ * dark-slate type. Accents are functional, not decorative — detergent
+ * cyan (water/action), fresh mint (done), amber (heat/drying),
+ * bubblegum rose (alerts and key metrics).
+ *
+ * --shadow-card is deliberately a 0-blur 1px ring: every component that
+ * asked for elevation gets a crisp structural border instead.
  */
 :root {
-  /* Core */
-  --ink: #2b3c7c;
-  --ink-muted: #5c6c9a;
-  --line: #c9e0f0;
+  /* Base structure */
+  --ink: #0f172a;
+  --ink-muted: #64748b;
+  --line: #e2e8f0;
   --surface: #ffffff;
-  --wash: #e4f3fc;
-  --wash-deep: #d2eaf9;
+  --wash: #f8fafc;
+  --wash-deep: #f1f5f9;
 
-  /* Primary — bubblegum pink */
-  --primary-100: #fce3f2;
-  --primary-300: #f8a9d6;
-  --primary-500: #ef5da8;
-  --primary-600: #c42a7e; /* buttons, links, focus ring — AA on white */
-  --primary-800: #8a1c59;
+  /* Primary — detergent cyan. 500 for fills/badges (with --on-primary
+     text), 600 for links and text on light ground (AA). */
+  --primary-100: #cffafe;
+  --primary-300: #67e8f9;
+  --primary-500: #06b6d4;
+  --primary-600: #0e7490;
+  --primary-800: #155e75;
+  --on-primary: #0f172a;
 
-  /* Accent — mint (use sparingly; this is the "fresh/done" signal) */
-  --accent-400: #a8dfc4;
-  --accent-500: #77c9a2; /* fills only */
-  --accent-700: #237a55; /* accent text — AA on white */
+  /* Accent — fresh mint (completed / ready) */
+  --accent-400: #34d399;
+  --accent-500: #10b981;
+  --accent-700: #047857;
 
-  /* Sun — reserved for the drying stage and nothing else */
-  --sun-500: #e08700;
-  --sun-700: #9a5b00;
+  /* Sun — reserved for the drying stage and partial payments */
+  --sun-500: #d97706;
+  --sun-700: #b45309;
 
-  /* Alert */
-  --danger-500: #d64545;
-  --danger-700: #c33a3a;
+  /* Alert / whimsical pop — bubblegum rose */
+  --danger-500: #f43f5e;
+  --danger-700: #e11d48;
 
-  /* Semantic status aliases — cold water to sun to fresh to put-away */
+  /* Semantic status aliases — cold water to heat to fresh to put-away */
   --status-received: var(--ink-muted);
-  --status-washing: #4fb3e8; /* sky-blue water */
+  --status-washing: var(--primary-500);
   --status-drying: var(--sun-500);
   --status-ready: var(--accent-500);
   --status-claimed: var(--ink);
@@ -45,9 +50,42 @@
   --pay-partial: var(--sun-500);
   --pay-paid: var(--accent-700);
 
-  /* Elevation — one soft sticker shadow */
-  --shadow-card: 0 1px 2px rgba(43, 60, 124, 0.08), 0 10px 24px -14px rgba(43, 60, 124, 0.28);
+  /* Flat, tactile: a hairline ring, not a floating shadow */
+  --shadow-card: 0 0 0 1px var(--line);
 
-  /* Tap highlight tint */
-  --tap-tint: rgba(239, 93, 168, 0.15);
+  --tap-tint: rgba(6, 182, 212, 0.12);
+}
+
+/* Dark mode — same structure, inverted ground. Borders go neutral-800,
+   text accents lift to their 300/400 stops for contrast on slate. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f1f5f9;
+    --ink-muted: #94a3b8;
+    --line: #1e293b;
+    --surface: #0f172a;
+    --wash: #0b1120;
+    --wash-deep: #1e293b;
+
+    --primary-100: #164e63;
+    --primary-300: #a5f3fc;
+    --primary-500: #06b6d4;
+    --primary-600: #22d3ee;
+    --primary-800: #a5f3fc;
+    --on-primary: #0b1120;
+
+    --accent-400: #34d399;
+    --accent-500: #10b981;
+    --accent-700: #6ee7b7;
+
+    --sun-500: #f59e0b;
+    --sun-700: #fcd34d;
+
+    --danger-500: #f43f5e;
+    --danger-700: #fda4af;
+
+    --status-claimed: #cbd5e1;
+
+    --tap-tint: rgba(34, 211, 238, 0.15);
+  }
 }

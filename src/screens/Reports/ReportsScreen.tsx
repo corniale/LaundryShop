@@ -256,7 +256,7 @@ export function ReportsScreen() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-wash-deep text-left text-xs text-ink-muted">
+              <tr className="bg-wash-deep text-left text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-muted">
                 <th className="rounded-l-input px-2 py-1.5">{t('users.name')}</th>
                 <th className="px-2 py-1.5 text-right">{t('reports.staffOrders')}</th>
                 <th className="px-2 py-1.5 text-right">{t('reports.staffStatus')}</th>
