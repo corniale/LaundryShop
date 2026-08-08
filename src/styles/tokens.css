@@ -1,0 +1,52 @@
+/*
+ * Design tokens — the ONLY place hex values are allowed.
+ * Palette: water and sunlight. Deep marine teal (water at depth),
+ * rinse cyan (moving water), calamansi green (clean), sun amber
+ * (reserved exclusively for the drying stage).
+ */
+:root {
+  /* Core */
+  --ink: #06323b;
+  --ink-muted: #5b7278;
+  --line: #dceaed;
+  --surface: #ffffff;
+  --wash: #f2f9fa;
+  --wash-deep: #e3f2f5;
+
+  /* Primary — rinse cyan */
+  --primary-100: #d2f2f7;
+  --primary-300: #7fdce8;
+  --primary-500: #17afc4;
+  --primary-600: #0b7a8c;
+  --primary-800: #084e5a;
+
+  /* Accent — calamansi */
+  --accent-400: #b6e05c;
+  --accent-500: #8cc63f;
+  --accent-700: #4e7a12;
+
+  /* Sun — drying stage only */
+  --sun-500: #e08700;
+  --sun-700: #9a5b00;
+
+  /* Alert */
+  --danger-500: #d64545;
+  --danger-700: #c33a3a;
+
+  /* Semantic status aliases — physical process, cold water to sun to fresh */
+  --status-received: var(--ink-muted);
+  --status-washing: var(--primary-500);
+  --status-drying: var(--sun-500);
+  --status-ready: var(--accent-500);
+  --status-claimed: var(--primary-800);
+
+  --pay-unpaid: var(--danger-500);
+  --pay-partial: var(--sun-500);
+  --pay-paid: var(--accent-700);
+
+  /* Elevation — the one soft shadow */
+  --shadow-card: 0 1px 2px rgba(6, 50, 59, 0.06), 0 8px 24px -12px rgba(6, 50, 59, 0.18);
+
+  /* Tap highlight tint */
+  --tap-tint: rgba(23, 175, 196, 0.15);
+}
