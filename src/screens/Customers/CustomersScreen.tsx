@@ -166,7 +166,7 @@ export function CustomersScreen() {
     <th className={right ? 'text-right' : 'text-left'}>
       <button
         onClick={() => setSort(key, defaultDesc)}
-        className={`min-h-touch w-full px-3 text-xs font-semibold ${right ? 'text-right' : 'text-left'} ${
+        className={`min-h-touch w-full px-3 text-[0.6875rem] font-semibold uppercase tracking-wider ${right ? 'text-right' : 'text-left'} ${
           sortKey === key ? 'text-primary-600' : 'text-ink-muted'
         }`}
       >
@@ -313,7 +313,7 @@ export function CustomersScreen() {
             {sorted.length === 0 ? (
               <EmptyState>{t('customers.empty')}</EmptyState>
             ) : (
-              <div className="overflow-x-auto rounded-card bg-surface shadow-card">
+              <div className="overflow-x-auto rounded-card border border-line bg-surface">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line bg-wash-deep">
