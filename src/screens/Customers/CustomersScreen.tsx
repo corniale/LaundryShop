@@ -1,6 +1,7 @@
 /**
- * Suki — list + detail (master–detail on ≥768px), duplicate detection,
- * archive not delete, CSV export.
+ * Suki — sortable table at ≥768px (scales to thousands of rows), compact
+ * cards with sort chips on phones. Duplicate detection, archive not
+ * delete, CSV export.
  */
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -9,16 +10,17 @@ import { db } from '../../data/db'
 import type { Customer } from '../../data/types'
 import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
-import { balanceCentavos } from '../../domain/payments'
+import { balanceCentavos, paymentStatus } from '../../domain/payments'
 import { addCustomer, updateCustomer, archiveCustomer, findCustomerByContact } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
-import { Card, Button, Sheet, Field, Input, TextArea, EmptyState } from '../../components/ui'
+import { Card, Button, Sheet, Field, Input, TextArea, EmptyState, Chip } from '../../components/ui'
 import { fmtDate, downloadCsv } from '../../app/format'
 import { toCsv } from '../../domain/csv'
 import { useDebounced } from '../../app/useDebounced'
 import { payToneClass } from '../Orders/OrdersScreen'
-import { paymentStatus } from '../../domain/payments'
+
+type SortKey = 'recent' | 'name' | 'contact' | 'orders' | 'spend' | 'balance'
 
 export function CustomersScreen() {
   const { id: selectedId } = useParams<{ id: string }>()
@@ -32,6 +34,8 @@ export function CustomersScreen() {
   const [form, setForm] = useState({ name: '', contact: '', address: '', notes: '' })
   const [dup, setDup] = useState<Customer | null>(null)
   const [limit, setLimit] = useState(50)
+  const [sortKey, setSortKey] = useState<SortKey>('recent')
+  const [sortDesc, setSortDesc] = useState(true)
 
   const customers = useLiveQuery(() => db.customers.filter((c) => !c.archivedAt).toArray(), []) ?? []
   const orders = useLiveQuery(() => db.orders.toArray(), []) ?? []
@@ -62,12 +66,33 @@ export function CustomersScreen() {
     return map
   }, [customers, orders, paymentsByOrder])
 
-  const filtered = useMemo(() => {
+  const sorted = useMemo(() => {
     const q = debounced.trim().toLowerCase()
-    return customers
-      .filter((c) => !q || c.name.toLowerCase().includes(q) || c.contact?.includes(q))
-      .sort((a, b) => (derived.get(b.id)?.lastActivity ?? '').localeCompare(derived.get(a.id)?.lastActivity ?? ''))
-  }, [customers, debounced, derived])
+    const rows = customers.filter((c) => !q || c.name.toLowerCase().includes(q) || c.contact?.includes(q))
+    const dir = sortDesc ? -1 : 1
+    const key = (c: Customer) => {
+      const d = derived.get(c.id)
+      switch (sortKey) {
+        case 'name':
+          return c.name.toLowerCase()
+        case 'contact':
+          return c.contact ?? ''
+        case 'orders':
+          return d?.orderCount ?? 0
+        case 'spend':
+          return d?.lifetime ?? 0
+        case 'balance':
+          return d?.balance ?? 0
+        default:
+          return d?.lastActivity ?? ''
+      }
+    }
+    return rows.sort((a, b) => {
+      const ka = key(a)
+      const kb = key(b)
+      return (ka < kb ? -1 : ka > kb ? 1 : 0) * dir
+    })
+  }, [customers, debounced, derived, sortKey, sortDesc])
 
   const selected = customers.find((c) => c.id === selectedId)
   const selectedOrders = useMemo(
@@ -79,6 +104,14 @@ export function CustomersScreen() {
         : [],
     [orders, selected],
   )
+
+  function setSort(key: SortKey, defaultDesc = true) {
+    if (sortKey === key) setSortDesc((d) => !d)
+    else {
+      setSortKey(key)
+      setSortDesc(defaultDesc)
+    }
+  }
 
   function openAdd() {
     setEditing(null)
@@ -120,42 +153,35 @@ export function CustomersScreen() {
   }
 
   function exportCsv() {
-    const rows = filtered.map((c) => {
+    const rows = sorted.map((c) => {
       const d = derived.get(c.id)
       return [c.name, c.contact ?? '', c.address ?? '', d?.orderCount ?? 0, ((d?.lifetime ?? 0) / 100).toFixed(2), ((d?.balance ?? 0) / 100).toFixed(2)]
     })
     downloadCsv('customers.csv', toCsv(['Name', 'Contact', 'Address', 'Orders', 'Lifetime', 'Balance'], rows))
   }
 
-  const list = (
-    <div className="flex flex-col gap-2">
-      {filtered.slice(0, limit).map((c) => {
-        const d = derived.get(c.id)
-        return (
-          <Card key={c.id} onClick={() => navigate(`/customers/${c.id}`)} className={selectedId === c.id ? 'ring-2 ring-primary-500' : ''}>
-            <div className="flex items-baseline justify-between">
-              <span className="font-semibold">{c.name}</span>
-              {(d?.balance ?? 0) > 0 && (
-                <span className="font-mono text-sm font-medium text-danger-700">{formatCentavos(d!.balance)}</span>
-              )}
-            </div>
-            <div className="text-sm text-ink-muted">
-              {c.contact} · {d?.orderCount ?? 0} {t('customers.orders')}
-            </div>
-          </Card>
-        )
-      })}
-      {filtered.length > limit && (
-        <Button variant="secondary" onClick={() => setLimit((l) => l + 50)}>
-          +{filtered.length - limit}
-        </Button>
-      )}
-      {filtered.length === 0 && <EmptyState>{t('customers.empty')}</EmptyState>}
-    </div>
+  const sortArrow = (key: SortKey) => (sortKey === key ? (sortDesc ? ' ↓' : ' ↑') : '')
+
+  const headerCell = (key: SortKey, label: string, right = false, defaultDesc = true) => (
+    <th className={right ? 'text-right' : 'text-left'}>
+      <button
+        onClick={() => setSort(key, defaultDesc)}
+        className={`min-h-touch w-full px-3 text-xs font-semibold ${right ? 'text-right' : 'text-left'} ${
+          sortKey === key ? 'text-primary-600' : 'text-ink-muted'
+        }`}
+      >
+        {label}
+        {sortArrow(key)}
+      </button>
+    </th>
   )
 
+  // ── Detail panel (shared by both breakpoints) ──
   const detail = selected && (
     <div className="flex flex-col gap-3">
+      <button onClick={() => navigate('/customers')} className="min-h-touch self-start font-semibold text-primary-600">
+        ← {t('common.back')}
+      </button>
       <Card>
         <div className="flex items-start justify-between">
           <div>
@@ -232,13 +258,109 @@ export function CustomersScreen() {
           </Button>
         </div>
       </div>
-      <Input placeholder={t('customers.search')} type="search" value={search} onChange={(e) => setSearch(e.target.value)} className="mb-3" />
 
-      {/* master–detail ≥768px, stacked on phones */}
-      <div className="md:grid md:grid-cols-[minmax(280px,380px)_1fr] md:gap-4">
-        <div className={selected ? 'hidden md:block' : ''}>{list}</div>
-        <div>{selected ? detail : <div className="hidden md:block" />}</div>
-      </div>
+      {selected ? (
+        detail
+      ) : (
+        <>
+          <Input placeholder={t('customers.search')} type="search" value={search} onChange={(e) => setSearch(e.target.value)} className="mb-3" />
+
+          {/* Phone: sort chips + compact cards */}
+          <div className="md:hidden">
+            <div className="-mx-4 mb-2 flex gap-2 overflow-x-auto px-4">
+              {(
+                [
+                  ['recent', t('customers.sort.recent')],
+                  ['name', t('customers.sort.name')],
+                  ['balance', t('customers.sort.balance')],
+                  ['spend', t('customers.sort.spend')],
+                ] as Array<[SortKey, string]>
+              ).map(([key, label]) => (
+                <Chip key={key} selected={sortKey === key} onClick={() => setSort(key, key !== 'name')}>
+                  {label}
+                  {sortArrow(key)}
+                </Chip>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2">
+              {sorted.slice(0, limit).map((c) => {
+                const d = derived.get(c.id)
+                return (
+                  <Card key={c.id} onClick={() => navigate(`/customers/${c.id}`)}>
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-semibold">{c.name}</span>
+                      {(d?.balance ?? 0) > 0 && (
+                        <span className="font-mono text-sm font-medium text-danger-700">{formatCentavos(d!.balance)}</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-ink-muted">
+                      {c.contact} · {d?.orderCount ?? 0} {t('customers.orders')}
+                    </div>
+                  </Card>
+                )
+              })}
+              {sorted.length > limit && (
+                <Button variant="secondary" onClick={() => setLimit((l) => l + 50)}>
+                  +{sorted.length - limit}
+                </Button>
+              )}
+              {sorted.length === 0 && <EmptyState>{t('customers.empty')}</EmptyState>}
+            </div>
+          </div>
+
+          {/* Tablet/desktop: sortable table */}
+          <div className="hidden md:block">
+            {sorted.length === 0 ? (
+              <EmptyState>{t('customers.empty')}</EmptyState>
+            ) : (
+              <div className="overflow-x-auto rounded-card bg-surface shadow-card">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-line bg-wash-deep">
+                      {headerCell('name', t('customers.name'), false, false)}
+                      {headerCell('contact', t('customers.contact'), false, false)}
+                      {headerCell('orders', t('tab.orders'), true)}
+                      {headerCell('spend', t('customers.totalSpend'), true)}
+                      {headerCell('balance', t('customers.balance'), true)}
+                      {headerCell('recent', t('customers.lastActivity'), true)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.slice(0, limit).map((c) => {
+                      const d = derived.get(c.id)
+                      return (
+                        <tr
+                          key={c.id}
+                          onClick={() => navigate(`/customers/${c.id}`)}
+                          className="cursor-pointer border-b border-line last:border-0 hover:bg-wash"
+                        >
+                          <td className="px-3 py-2.5 font-medium">{c.name}</td>
+                          <td className="px-3 py-2.5 text-ink-muted">{c.contact}</td>
+                          <td className="px-3 py-2.5 text-right font-mono">{d?.orderCount ?? 0}</td>
+                          <td className="px-3 py-2.5 text-right font-mono">{formatCentavos(d?.lifetime ?? 0)}</td>
+                          <td className={`px-3 py-2.5 text-right font-mono ${(d?.balance ?? 0) > 0 ? 'font-medium text-danger-700' : 'text-ink-muted'}`}>
+                            {formatCentavos(d?.balance ?? 0)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-xs text-ink-muted">
+                            {d?.lastActivity ? fmtDate(d.lastActivity) : '—'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+                {sorted.length > limit && (
+                  <div className="p-2">
+                    <Button variant="secondary" className="w-full" onClick={() => setLimit((l) => l + 50)}>
+                      +{sorted.length - limit}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       <Sheet open={formOpen} onClose={() => setFormOpen(false)} title={editing ? t('orders.edit') : t('customers.add')}>
         <div className="flex flex-col gap-3">
