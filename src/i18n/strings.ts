@@ -124,7 +124,9 @@ const strings = {
   'orders.pcs': { tl: 'pcs', en: 'pcs' },
   'orders.notes': { tl: 'Notes', en: 'Notes' },
   'orders.dateRange': { tl: 'Petsa', en: 'Dates' },
-  'orders.viewList': { tl: 'Listahan', en: 'List' },
+  'orders.viewList': { tl: 'Talaan', en: 'Table' },
+  'orders.stage': { tl: 'Yugto', en: 'Stage' },
+  'orders.nextStage': { tl: 'Susunod', en: 'Next' },
   'orders.viewBoard': { tl: 'Board', en: 'Board' },
   'orders.message': { tl: 'I-message', en: 'Message' },
 
@@ -155,6 +157,7 @@ const strings = {
   },
   'customers.exportCsv': { tl: 'I-export ang CSV', en: 'Export CSV' },
   'customers.lastActivity': { tl: 'Huling galaw', en: 'Last activity' },
+  'customers.noMatch': { tl: 'Walang tugmang suki.', en: 'No matching customer.' },
   'customers.sort.recent': { tl: 'Pinakabago', en: 'Recent' },
   'customers.sort.name': { tl: 'Pangalan', en: 'Name' },
   'customers.sort.balance': { tl: 'Balanse', en: 'Balance' },

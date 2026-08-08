@@ -1,8 +1,9 @@
 /**
  * Orders — two views behind a toggle:
- *  - List: searchable, filterable, paginated cards (find a specific order).
+ *  - Table: sortable rows for finding and comparing orders; each row
+ *    shows a five-tick stage read and a one-click Next button.
  *  - Board: kanban columns per wash-line stage (see the whole shop at once).
- * Columns scroll horizontally on phones; cards advance with one tap.
+ * Both advance an order in a single click, no drill-down required.
  */
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -16,11 +17,12 @@ import { STATUS_ORDER, nextStatus } from '../../domain/status'
 import { advanceOrderStatus } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
-import { WashLine, statusLabel } from '../../components/WashLine'
-import { Card, Chip, Input, Button, EmptyState, Sheet } from '../../components/ui'
+import { statusLabel } from '../../components/WashLine'
+import { Chip, Input, Button, EmptyState, Sheet } from '../../components/ui'
 import { fmtDate } from '../../app/format'
 import { OrderIntake } from './OrderIntake'
 import { useDebounced } from '../../app/useDebounced'
+import { OrdersTable, sortOrderRows, type OrderRow, type OrderSortKey } from './OrdersTable'
 
 const PAGE = 30
 const VIEW_PREF_KEY = 'ordersView' // UI preference only — worthless if lost
@@ -53,6 +55,10 @@ export function OrdersScreen() {
   const [toDate, setToDate] = useState('')
   const [limit, setLimit] = useState(PAGE)
   const [intakeOpen, setIntakeOpen] = useState(false)
+  // Default: earliest stage first, so active work leads and claimed
+  // orders fall to the bottom; ties break on the promised date.
+  const [sortKey, setSortKey] = useState<OrderSortKey>('stage')
+  const [sortDesc, setSortDesc] = useState(false)
   const [view, setView] = useState<'list' | 'board'>(() => {
     try {
       return localStorage.getItem(VIEW_PREF_KEY) === 'board' ? 'board' : 'list'
@@ -129,10 +135,28 @@ export function OrdersScreen() {
     return cols
   }, [searched])
 
-  const visible = filtered.slice(0, limit)
-
   function customerName(o: Order): string {
     return o.walkInName ?? (o.customerId ? customersById.get(o.customerId)?.name ?? '—' : '—')
+  }
+
+  const sortedRows = useMemo(() => {
+    const rows: OrderRow[] = filtered.map((o) => ({
+      order: o,
+      customerName: customerName(o),
+      payments: paymentsByOrder.get(o.id) ?? [],
+    }))
+    return sortOrderRows(rows, sortKey, sortDesc)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, paymentsByOrder, customersById, sortKey, sortDesc])
+
+  const visible = sortedRows.slice(0, limit)
+
+  function setSort(key: OrderSortKey, defaultDesc = true) {
+    if (sortKey === key) setSortDesc((d) => !d)
+    else {
+      setSortKey(key)
+      setSortDesc(defaultDesc)
+    }
   }
 
   async function advance(o: Order, to: OrderStatus) {
@@ -173,7 +197,7 @@ export function OrdersScreen() {
               aria-selected={view === v}
               onClick={() => setView(v)}
               className={`min-h-touch rounded-[10px] px-3 text-sm font-semibold ${
-                view === v ? 'bg-primary-600 text-surface' : 'text-ink-muted'
+                view === v ? 'bg-primary-500 text-on-primary' : 'text-ink-muted'
               }`}
             >
               {t(v === 'list' ? 'orders.viewList' : 'orders.viewBoard')}
@@ -286,38 +310,17 @@ export function OrdersScreen() {
         <EmptyState>{t('orders.empty')}</EmptyState>
       ) : (
         <div className="flex flex-col gap-2">
-          {visible.map((o) => {
-            const pays = paymentsByOrder.get(o.id) ?? []
-            const pStatus = paymentStatus(o.totalCentavos, pays)
-            return (
-              <Card key={o.id} onClick={() => navigate(`/orders/${o.id}`)} className={o.voidedAt ? 'opacity-50' : ''}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <span className="font-mono text-sm font-medium">{o.code}</span>
-                    <span className="truncate">{customerName(o)}</span>
-                    {o.voidedAt && (
-                      <span className="rounded-pill bg-danger-500/10 px-2 py-0.5 text-xs font-bold text-danger-700">
-                        {t('orders.voidedBadge')}
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-mono font-medium">{formatCentavos(o.totalCentavos)}</span>
-                </div>
-                <div className="mb-2 mt-0.5 flex items-center gap-2 text-xs text-ink-muted">
-                  <span>
-                    {o.serviceNameSnapshot} · {o.kilos} {t('orders.kg')} · {t('orders.promised')}: {fmtDate(o.promisedAt)}
-                  </span>
-                  <span className={`rounded-pill px-2 py-0.5 font-semibold ${payToneClass(pStatus)}`}>
-                    {t(`pay.${pStatus}` as 'pay.unpaid')}
-                  </span>
-                </div>
-                {!o.voidedAt && <WashLine status={o.status} onAdvance={(to) => void advance(o, to)} />}
-              </Card>
-            )
-          })}
-          {filtered.length > limit && (
+          <OrdersTable
+            rows={visible}
+            sortKey={sortKey}
+            sortDesc={sortDesc}
+            onSort={setSort}
+            onOpen={(id) => navigate(`/orders/${id}`)}
+            onAdvance={(o, to) => void advance(o, to)}
+          />
+          {sortedRows.length > limit && (
             <Button variant="secondary" onClick={() => setLimit((l) => l + PAGE)}>
-              +{filtered.length - limit}
+              +{sortedRows.length - limit}
             </Button>
           )}
         </div>
