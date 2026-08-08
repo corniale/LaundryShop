@@ -21,7 +21,7 @@ import {
 } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
-import { Button, Field, Input, TextArea, Chip, ActionBar } from '../../components/ui'
+import { Button, Field, Input, TextArea, Chip } from '../../components/ui'
 
 const METHODS: PaymentMethod[] = ['cash', 'gcash', 'maya', 'bank', 'other']
 
@@ -460,16 +460,14 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
         )}
       </section>
 
-      <ActionBar>
-        <div className="flex gap-2">
-          <Button variant="ghost" className="flex-none" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button className="flex-1" disabled={!canSave || saving} onClick={() => void handleSave()}>
-            {t('orders.save')}
-          </Button>
-        </div>
-      </ActionBar>
+      <div className="flex gap-2 border-t border-line pt-3">
+        <Button variant="ghost" className="flex-none" onClick={onClose}>
+          {t('common.cancel')}
+        </Button>
+        <Button className="flex-1" disabled={!canSave || saving} onClick={() => void handleSave()}>
+          {t('orders.save')}
+        </Button>
+      </div>
     </div>
   )
 }

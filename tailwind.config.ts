@@ -41,7 +41,9 @@ export default {
       fontFamily: {
         display: ['Syne', 'system-ui', 'sans-serif'],
         body: ['"Public Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        // "Mono" is semantic here, not literal: money, codes, and kilos
+        // set in the body face with tabular figures (see .font-mono).
+        mono: ['"Public Sans"', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         xs: ['0.75rem', { lineHeight: '1.45' }],

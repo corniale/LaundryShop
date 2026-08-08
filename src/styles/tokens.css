@@ -39,10 +39,13 @@
   --danger-500: #f43f5e;
   --danger-700: #e11d48;
 
-  /* Semantic status aliases — cold water to heat to fresh to put-away */
-  --status-received: var(--ink-muted);
+  /* Semantic status aliases — strictly the app palette:
+     slate → detergent cyan → rose (heat) → mint (fresh) → dark slate.
+     Drying moved off amber so it no longer shares a hue with partial
+     payments; amber is now payments-only vocabulary. */
+  --status-received: #94a3b8;
   --status-washing: var(--primary-500);
-  --status-drying: var(--sun-500);
+  --status-drying: var(--danger-500);
   --status-ready: var(--accent-500);
   --status-claimed: var(--ink);
 
@@ -84,6 +87,7 @@
     --danger-500: #f43f5e;
     --danger-700: #fda4af;
 
+    --status-received: #64748b;
     --status-claimed: #cbd5e1;
 
     --tap-tint: rgba(34, 211, 238, 0.15);

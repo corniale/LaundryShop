@@ -17,7 +17,7 @@ import { advanceOrderStatus } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { WashLine, statusLabel } from '../../components/WashLine'
-import { Card, Chip, Input, Button, EmptyState, Sheet } from '../../components/ui'
+import { Card, Chip, Input, Button, EmptyState } from '../../components/ui'
 import { fmtDate } from '../../app/format'
 import { OrderIntake } from './OrderIntake'
 import { useDebounced } from '../../app/useDebounced'
@@ -152,8 +152,8 @@ export function OrdersScreen() {
     <div className="flex flex-col gap-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="font-display text-lg font-bold">{t('orders.title')}</h1>
-        <Button className="!py-2" onClick={() => setIntakeOpen(true)}>
-          + {t('orders.new')}
+        <Button className="!py-2" onClick={() => setIntakeOpen((o) => !o)}>
+          {intakeOpen ? t('common.cancel') : `+ ${t('orders.new')}`}
         </Button>
       </div>
 
@@ -181,6 +181,21 @@ export function OrdersScreen() {
           ))}
         </div>
       </div>
+
+      {/* Inline intake — expands below the search bar, never a side sheet */}
+      {intakeOpen && (
+        <Card className="!p-4">
+          <h2 className="mb-3 font-display text-base font-semibold">{t('orders.new')}</h2>
+          <OrderIntake
+            onClose={() => setIntakeOpen(false)}
+            onSaved={(id, code) => {
+              setIntakeOpen(false)
+              toast({ message: t('orders.saved', { code }) })
+              navigate(`/orders/${id}`)
+            }}
+          />
+        </Card>
+      )}
 
       {view === 'list' && (
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -311,16 +326,6 @@ export function OrdersScreen() {
         </div>
       )}
 
-      <Sheet open={intakeOpen} onClose={() => setIntakeOpen(false)} title={t('orders.new')} wide>
-        <OrderIntake
-          onClose={() => setIntakeOpen(false)}
-          onSaved={(id, code) => {
-            setIntakeOpen(false)
-            toast({ message: t('orders.saved', { code }) })
-            navigate(`/orders/${id}`)
-          }}
-        />
-      </Sheet>
     </div>
   )
 }
