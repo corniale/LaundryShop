@@ -83,7 +83,9 @@ export function WashLine({
 
 /**
  * Shop rail — today's whole load across the five stages, one glance.
- * Segment widths are proportional to order counts.
+ * Each stage is one flex column holding its bar AND its label, so the
+ * text always tracks the graphic; columns grow with their order count
+ * but never shrink below a readable label.
  */
 export function ShopRail({
   counts,
@@ -94,34 +96,30 @@ export function ShopRail({
 }) {
   const total = STATUS_ORDER.reduce((sum, s) => sum + counts[s], 0)
   return (
-    <div>
-      <div className="flex h-9 gap-1">
-        {STATUS_ORDER.map((s) => {
-          const n = counts[s]
-          return (
-            <button
-              key={s}
-              onClick={() => onSelect?.(s)}
-              aria-label={`${statusLabel(s)}: ${n}`}
-              className="washline-seg flex min-w-touch items-center justify-center rounded-input font-mono text-sm font-medium"
+    <div className="flex gap-1">
+      {STATUS_ORDER.map((s) => {
+        const n = counts[s]
+        return (
+          <button
+            key={s}
+            onClick={() => onSelect?.(s)}
+            aria-label={`${statusLabel(s)}: ${n}`}
+            className="washline-seg flex min-w-14 flex-col items-center gap-1"
+            style={{ flexGrow: total === 0 ? 1 : Math.max(n, 0.5), flexBasis: 0 }}
+          >
+            <span
+              className="flex h-9 w-full items-center justify-center rounded-input font-mono text-sm font-medium"
               style={{
-                flexGrow: total === 0 ? 1 : Math.max(n, 0.35),
                 backgroundColor: n > 0 ? SEG_VAR[s] : 'var(--wash-deep)',
                 color: n > 0 ? 'var(--surface)' : 'var(--ink-muted)',
               }}
             >
               {n}
-            </button>
-          )
-        })}
-      </div>
-      <div className="mt-1 flex gap-1">
-        {STATUS_ORDER.map((s) => (
-          <div key={s} className="flex-1 text-center text-xs text-ink-muted" style={{ flexGrow: 1 }}>
-            {statusLabel(s)}
-          </div>
-        ))}
-      </div>
+            </span>
+            <span className="w-full truncate text-center text-xs text-ink-muted">{statusLabel(s)}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
