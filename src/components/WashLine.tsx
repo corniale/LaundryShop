@@ -82,6 +82,29 @@ export function WashLine({
 }
 
 /**
+ * StageDots — a table-cell-sized progress read: five ticks filled to the
+ * current stage, plus the stage name. Keeps "where is this load?"
+ * visible in a dense row without a full rail.
+ */
+export function StageDots({ status }: { status: OrderStatus }) {
+  const current = statusIndex(status)
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="inline-flex gap-0.5" aria-hidden>
+        {STATUS_ORDER.map((s, i) => (
+          <span
+            key={s}
+            className="h-3.5 w-1.5 rounded-[1px]"
+            style={{ backgroundColor: i <= current ? SEG_VAR[s] : 'var(--line)' }}
+          />
+        ))}
+      </span>
+      <span className="whitespace-nowrap text-xs text-ink-muted">{statusLabel(status)}</span>
+    </span>
+  )
+}
+
+/**
  * Shop rail — today's whole load across the five stages, one glance.
  * Each stage is one flex column holding its bar AND its label, so the
  * text always tracks the graphic; columns grow with their order count

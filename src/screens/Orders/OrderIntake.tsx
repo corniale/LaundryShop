@@ -118,9 +118,11 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
     })
   }, [service, kilos, draft.addOns, draft.discount])
 
+  // Results appear as you type; a blank box shows nothing rather than a
+  // list of arbitrary names.
   const filteredCustomers = useMemo(() => {
     const q = customerSearch.trim().toLowerCase()
-    if (!q) return customers.slice(0, 6)
+    if (!q) return []
     return customers
       .filter((c) => c.name.toLowerCase().includes(q) || c.contact?.includes(q))
       .slice(0, 6)
@@ -236,13 +238,16 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
               {filteredCustomers.map((c) => (
                 <button
                   key={c.id}
-                  className="min-h-touch rounded-input bg-surface px-3 py-2 text-left shadow-card"
+                  className="min-h-touch rounded-input border border-line bg-surface px-3 py-2 text-left"
                   onClick={() => setDraft((d) => ({ ...d, customerId: c.id }))}
                 >
                   <span className="font-medium">{c.name}</span>{' '}
                   <span className="text-sm text-ink-muted">{c.contact}</span>
                 </button>
               ))}
+              {customerSearch.trim() && filteredCustomers.length === 0 && (
+                <p className="px-3 py-2 text-sm text-ink-muted">{t('customers.noMatch')}</p>
+              )}
               {!showNewCustomer && (
                 <button className="min-h-touch rounded-input px-3 py-2 text-left font-semibold text-primary-600" onClick={() => setShowNewCustomer(true)}>
                   {t('orders.newCustomer')}
