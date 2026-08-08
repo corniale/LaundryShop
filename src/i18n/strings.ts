@@ -124,6 +124,8 @@ const strings = {
   'orders.pcs': { tl: 'pcs', en: 'pcs' },
   'orders.notes': { tl: 'Notes', en: 'Notes' },
   'orders.dateRange': { tl: 'Petsa', en: 'Dates' },
+  'orders.viewList': { tl: 'Listahan', en: 'List' },
+  'orders.viewBoard': { tl: 'Board', en: 'Board' },
   'orders.message': { tl: 'I-message', en: 'Message' },
 
   // ── Customers ──────────────────────────────────────────────────
@@ -152,6 +154,11 @@ const strings = {
     en: 'No customers yet. Add them with their first order.',
   },
   'customers.exportCsv': { tl: 'I-export ang CSV', en: 'Export CSV' },
+  'customers.lastActivity': { tl: 'Huling galaw', en: 'Last activity' },
+  'customers.sort.recent': { tl: 'Pinakabago', en: 'Recent' },
+  'customers.sort.name': { tl: 'Pangalan', en: 'Name' },
+  'customers.sort.balance': { tl: 'Balanse', en: 'Balance' },
+  'customers.sort.spend': { tl: 'Gastos', en: 'Spend' },
 
   // ── Services ───────────────────────────────────────────────────
   'services.title': { tl: 'Services at Presyo', en: 'Services & Prices' },
@@ -436,6 +443,7 @@ const strings = {
   'common.yesterday': { tl: 'Kahapon', en: 'Yesterday' },
   'common.required': { tl: 'Kailangan ito.', en: 'This is required.' },
   'common.logout': { tl: 'I-lock ang app', en: 'Lock the app' },
+  'common.back': { tl: 'Bumalik', en: 'Back' },
   'common.error.save': {
     tl: 'Hindi na-save. Puno ang storage ng phone. Mag-download ng backup, tapos i-clear ang ibang app.',
     en: 'Could not save. Phone storage is full. Download a backup, then clear other apps.',

@@ -52,8 +52,8 @@ export default {
         '2xl': ['2.5rem', { lineHeight: '1.15' }],
       },
       borderRadius: {
-        card: '14px',
-        input: '10px',
+        card: '20px',
+        input: '12px',
         pill: '999px',
       },
       boxShadow: {
