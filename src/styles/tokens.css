@@ -56,6 +56,9 @@
   /* Flat, tactile: a hairline ring, not a floating shadow */
   --shadow-card: 0 0 0 1px var(--line);
 
+  /* Modal scrim — covers and quiets the page behind a dialog */
+  --scrim: rgba(15, 23, 42, 0.55);
+
   --tap-tint: rgba(6, 182, 212, 0.12);
 }
 
@@ -89,6 +92,8 @@
 
     --status-received: #64748b;
     --status-claimed: #cbd5e1;
+
+    --scrim: rgba(2, 6, 23, 0.7);
 
     --tap-tint: rgba(34, 211, 238, 0.15);
   }

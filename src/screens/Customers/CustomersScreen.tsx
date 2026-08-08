@@ -14,7 +14,7 @@ import { balanceCentavos, paymentStatus } from '../../domain/payments'
 import { addCustomer, updateCustomer, archiveCustomer, findCustomerByContact } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
-import { Card, Button, Field, Input, TextArea, EmptyState, Chip } from '../../components/ui'
+import { Card, Button, Sheet, Field, Input, TextArea, EmptyState, Chip } from '../../components/ui'
 import { fmtDate, downloadCsv } from '../../app/format'
 import { toCsv } from '../../domain/csv'
 import { useDebounced } from '../../app/useDebounced'
@@ -245,13 +245,13 @@ export function CustomersScreen() {
     </div>
   )
 
-  // Inline add/edit form — appears below the search bar (or atop the
-  // detail when editing), never a side sheet.
-  const formPanel = formOpen && (
-    <Card className="mb-3 !p-4">
-      <h2 className="mb-3 font-display text-base font-semibold">
-        {editing ? t('orders.edit') : t('customers.add')}
-      </h2>
+  // Add/edit form — a centered floating dialog over a dimmed page.
+  const formPanel = (
+    <Sheet
+      open={formOpen}
+      onClose={() => setFormOpen(false)}
+      title={editing ? t('orders.edit') : t('customers.add')}
+    >
       <div className="flex flex-col gap-3">
         <Field label={t('customers.name')}>
           <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
@@ -289,7 +289,7 @@ export function CustomersScreen() {
           )}
         </div>
       </div>
-    </Card>
+    </Sheet>
   )
 
   return (
@@ -300,8 +300,8 @@ export function CustomersScreen() {
           <Button variant="ghost" className="!py-2 text-sm" onClick={exportCsv}>
             {t('customers.exportCsv')}
           </Button>
-          <Button className="!py-2" onClick={() => (formOpen && !editing ? setFormOpen(false) : openAdd())}>
-            {formOpen && !editing ? t('common.cancel') : `+ ${t('customers.add')}`}
+          <Button className="!py-2" onClick={openAdd}>
+            + {t('customers.add')}
           </Button>
         </div>
       </div>
