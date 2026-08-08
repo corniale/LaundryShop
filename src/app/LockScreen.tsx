@@ -154,11 +154,12 @@ export function LockScreen() {
 
       {selected && (
         <>
+          {/* Four dots (the minimum PIN); a fifth/sixth appears only as typed */}
           <div className="flex gap-2" aria-label="PIN">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
+            {Array.from({ length: Math.max(4, pin.length) }, (_, i) => (
               <div
                 key={i}
-                className={`h-3.5 w-3.5 rounded-pill ${i < pin.length ? 'bg-primary-600' : 'bg-line'} ${i >= 4 ? 'opacity-50' : ''}`}
+                className={`h-3.5 w-3.5 rounded-pill ${i < pin.length ? 'bg-primary-600' : 'bg-line'}`}
               />
             ))}
           </div>
