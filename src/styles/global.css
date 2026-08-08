@@ -6,18 +6,26 @@
 
 /* Self-hosted fonts — never fetched at runtime */
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/fredoka-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fredoka';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('./fonts/archivo-600.woff2') format('woff2');
+  src: url('./fonts/fredoka-600.woff2') format('woff2');
 }
+/* Fredoka's 600 doubles as bold — keep bold requests from faux-bolding */
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Fredoka';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/archivo-700.woff2') format('woff2');
+  src: url('./fonts/fredoka-600.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Public Sans';
@@ -67,7 +75,7 @@ body {
 }
 
 .font-display {
-  letter-spacing: -0.02em;
+  letter-spacing: -0.005em;
 }
 
 .font-mono {

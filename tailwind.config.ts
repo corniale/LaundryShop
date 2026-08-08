@@ -38,7 +38,7 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Archivo', 'system-ui', 'sans-serif'],
+        display: ['Fredoka', 'system-ui', 'sans-serif'],
         body: ['"Public Sans"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
