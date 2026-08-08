@@ -37,6 +37,7 @@ export default {
           700: 'var(--danger-700)',
         },
         'on-primary': 'var(--on-primary)',
+        scrim: 'var(--scrim)',
       },
       fontFamily: {
         display: ['Syne', 'system-ui', 'sans-serif'],

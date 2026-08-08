@@ -102,6 +102,10 @@ export function TextArea({ className = '', ...props }: React.TextareaHTMLAttribu
 
 // ── Sheet (bottom on phones, right-side ≥768px) ───────────────────
 
+/**
+ * Sheet — a centered floating dialog. The scrim dims and blurs the page
+ * behind it so the form owns the viewport's attention.
+ */
 export function Sheet({
   open,
   onClose,
@@ -117,13 +121,19 @@ export function Sheet({
 }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-primary-800/40" onClick={onClose} />
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center p-3 pb-safe md:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div className="absolute inset-0 bg-scrim backdrop-blur-[2px]" onClick={onClose} />
       <div
-        className={`absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-card bg-wash pb-safe
-          md:inset-x-auto md:inset-y-0 md:right-0 md:max-h-none md:h-full md:rounded-none ${wide ? 'md:w-[560px]' : 'md:w-[440px]'}`}
+        className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-card border border-line bg-wash ${
+          wide ? 'max-w-xl' : 'max-w-md'
+        }`}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-wash px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-line bg-wash px-4 py-3">
           <h2 className="font-display text-md font-semibold">{title}</h2>
           <button
             onClick={onClose}
@@ -133,7 +143,7 @@ export function Sheet({
             ✕
           </button>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="overflow-y-auto p-4">{children}</div>
       </div>
     </div>
   )
