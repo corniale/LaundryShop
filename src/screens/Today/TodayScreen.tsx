@@ -176,15 +176,23 @@ export function TodayScreen() {
         <Stat label={t('today.outstanding')} value={formatCentavos(outstanding)} tone={outstanding > 0 ? 'danger' : undefined} />
       </div>
 
-      {/* Low stock strip */}
+      {/* Low stock — a card like its neighbours, with an amber accent */}
       {lowStock.length > 0 && (
-        <button
-          onClick={() => navigate('/more/inventory')}
-          className="rounded-card bg-sun-500/15 px-4 py-3 text-left text-sm text-sun-700"
-        >
-          <span className="font-semibold">{t('today.lowStock')}:</span>{' '}
-          {lowStock.map((i) => `${i.name} (${i.currentQty} ${i.unit})`).join(' · ')}
-        </button>
+        <Card onClick={() => navigate('/more/inventory')} className="flex items-center gap-3">
+          <span
+            aria-hidden
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-input bg-sun-500/15 text-md"
+          >
+            📦
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-sun-700">{t('today.lowStock')}</div>
+            <div className="truncate text-sm text-ink-muted">
+              {lowStock.map((i) => `${i.name} (${i.currentQty} ${i.unit})`).join(' · ')}
+            </div>
+          </div>
+          <span className="ml-auto shrink-0 text-ink-muted">›</span>
+        </Card>
       )}
 
       {/* Not yet claimed */}
