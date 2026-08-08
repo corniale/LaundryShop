@@ -14,7 +14,7 @@ import { balanceCentavos, paymentStatus } from '../../domain/payments'
 import { addCustomer, updateCustomer, archiveCustomer, findCustomerByContact } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
-import { Card, Button, Sheet, Field, Input, TextArea, EmptyState, Chip } from '../../components/ui'
+import { Card, Button, Field, Input, TextArea, EmptyState, Chip } from '../../components/ui'
 import { fmtDate, downloadCsv } from '../../app/format'
 import { toCsv } from '../../domain/csv'
 import { useDebounced } from '../../app/useDebounced'
@@ -245,6 +245,53 @@ export function CustomersScreen() {
     </div>
   )
 
+  // Inline add/edit form — appears below the search bar (or atop the
+  // detail when editing), never a side sheet.
+  const formPanel = formOpen && (
+    <Card className="mb-3 !p-4">
+      <h2 className="mb-3 font-display text-base font-semibold">
+        {editing ? t('orders.edit') : t('customers.add')}
+      </h2>
+      <div className="flex flex-col gap-3">
+        <Field label={t('customers.name')}>
+          <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+        </Field>
+        <Field label={t('customers.contact')}>
+          <Input inputMode="tel" value={form.contact} onChange={(e) => { setForm((f) => ({ ...f, contact: e.target.value })); setDup(null) }} />
+        </Field>
+        <Field label={t('customers.address')}>
+          <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
+        </Field>
+        <Field label={t('customers.notes')}>
+          <TextArea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+        </Field>
+        {dup && (
+          <div className="rounded-input bg-sun-500/15 p-3 text-sm text-sun-700">
+            {t('customers.duplicate', { name: dup.name })}
+            <div className="mt-2 flex gap-2">
+              <Button variant="secondary" className="!py-2 text-sm" onClick={() => { setFormOpen(false); navigate(`/customers/${dup.id}`) }}>
+                {t('customers.useExisting')}
+              </Button>
+              <Button variant="ghost" className="!py-2 text-sm" onClick={() => void save(true)}>
+                {t('customers.createAnyway')}
+              </Button>
+            </div>
+          </div>
+        )}
+        <div className="flex gap-2 border-t border-line pt-3">
+          <Button variant="ghost" className="flex-none" onClick={() => setFormOpen(false)}>
+            {t('common.cancel')}
+          </Button>
+          {!dup && (
+            <Button className="flex-1" disabled={!form.name.trim()} onClick={() => void save()}>
+              {t('customers.save')}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+
   return (
     <div className="p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -253,17 +300,21 @@ export function CustomersScreen() {
           <Button variant="ghost" className="!py-2 text-sm" onClick={exportCsv}>
             {t('customers.exportCsv')}
           </Button>
-          <Button className="!py-2" onClick={openAdd}>
-            + {t('customers.add')}
+          <Button className="!py-2" onClick={() => (formOpen && !editing ? setFormOpen(false) : openAdd())}>
+            {formOpen && !editing ? t('common.cancel') : `+ ${t('customers.add')}`}
           </Button>
         </div>
       </div>
 
       {selected ? (
-        detail
+        <>
+          {formPanel}
+          {detail}
+        </>
       ) : (
         <>
           <Input placeholder={t('customers.search')} type="search" value={search} onChange={(e) => setSearch(e.target.value)} className="mb-3" />
+          {formPanel}
 
           {/* Phone: sort chips + compact cards */}
           <div className="md:hidden">
@@ -362,40 +413,6 @@ export function CustomersScreen() {
         </>
       )}
 
-      <Sheet open={formOpen} onClose={() => setFormOpen(false)} title={editing ? t('orders.edit') : t('customers.add')}>
-        <div className="flex flex-col gap-3">
-          <Field label={t('customers.name')}>
-            <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-          </Field>
-          <Field label={t('customers.contact')}>
-            <Input inputMode="tel" value={form.contact} onChange={(e) => { setForm((f) => ({ ...f, contact: e.target.value })); setDup(null) }} />
-          </Field>
-          <Field label={t('customers.address')}>
-            <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
-          </Field>
-          <Field label={t('customers.notes')}>
-            <TextArea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
-          </Field>
-          {dup && (
-            <div className="rounded-input bg-sun-500/15 p-3 text-sm text-sun-700">
-              {t('customers.duplicate', { name: dup.name })}
-              <div className="mt-2 flex gap-2">
-                <Button variant="secondary" className="!py-2 text-sm" onClick={() => { setFormOpen(false); navigate(`/customers/${dup.id}`) }}>
-                  {t('customers.useExisting')}
-                </Button>
-                <Button variant="ghost" className="!py-2 text-sm" onClick={() => void save(true)}>
-                  {t('customers.createAnyway')}
-                </Button>
-              </div>
-            </div>
-          )}
-          {!dup && (
-            <Button disabled={!form.name.trim()} onClick={() => void save()}>
-              {t('customers.save')}
-            </Button>
-          )}
-        </div>
-      </Sheet>
     </div>
   )
 }

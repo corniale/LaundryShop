@@ -96,7 +96,7 @@ export function ShopRail({
 }) {
   const total = STATUS_ORDER.reduce((sum, s) => sum + counts[s], 0)
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1.5">
       {STATUS_ORDER.map((s) => {
         const n = counts[s]
         return (
@@ -108,10 +108,13 @@ export function ShopRail({
             style={{ flexGrow: total === 0 ? 1 : Math.max(n, 0.5), flexBasis: 0 }}
           >
             <span
-              className="flex h-9 w-full items-center justify-center rounded-input font-mono text-sm font-medium"
+              className="flex h-9 w-full items-center justify-center rounded-input border font-mono text-sm font-semibold text-ink"
               style={{
-                backgroundColor: n > 0 ? SEG_VAR[s] : 'var(--wash-deep)',
-                color: n > 0 ? 'var(--surface)' : 'var(--ink-muted)',
+                backgroundColor:
+                  n > 0 ? `color-mix(in srgb, ${SEG_VAR[s]} 14%, transparent)` : 'transparent',
+                borderColor:
+                  n > 0 ? `color-mix(in srgb, ${SEG_VAR[s]} 45%, transparent)` : 'var(--line)',
+                color: n > 0 ? undefined : 'var(--ink-muted)',
               }}
             >
               {n}
