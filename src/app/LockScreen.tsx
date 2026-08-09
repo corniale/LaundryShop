@@ -12,6 +12,7 @@ export function LockScreen() {
   const { unlock, unlockRecovered, cooldownUntil, attemptsLeft } = useAuth()
   const users = useLiveQuery(() => db.users.filter((u) => u.active).toArray(), []) ?? []
   const appMeta = useLiveQuery(() => db.appMeta.get('app'), [])
+  const shop = useLiveQuery(() => db.shop.toArray(), [])?.[0]
   const [selected, setSelected] = useState<User | null>(null)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -123,10 +124,12 @@ export function LockScreen() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-wash p-6 pb-safe">
-      <div className="text-center">
-        <h1 className="font-display text-xl font-bold text-primary-deep">
-          {appMeta?.demoMode ? 'Bubbles Laundry Shop' : ''}
-        </h1>
+      {/* The shop's own mark and name — the first screen of every shift */}
+      <div className="flex flex-col items-center text-center">
+        {shop?.logoDataUrl && (
+          <img src={shop.logoDataUrl} alt="" className="mb-3 h-16 w-16 rounded-card object-cover" />
+        )}
+        <h1 className="font-display text-xl font-bold text-primary-deep">{shop?.name ?? ''}</h1>
         <p className="mt-1 text-ink-muted">{selected ? t('lock.title') : t('lock.who')}</p>
       </div>
 

@@ -223,3 +223,7 @@ Recorded where the codebase had to resolve something the section leaves open:
 - **`src/styles/themes.test.ts`** scans the tree and fails if a literal
   colour appears outside `themes.css`, so §1 is enforced by the build rather
   than by memory.
+- **The section is called Itsura in Taglish and Appearance in English.** §7
+  names it "Settings → Itsura", but the app's own rule is that every string
+  has a form in each locale, and an English build showing a Taglish heading
+  reads as an untranslated string rather than a deliberate one.

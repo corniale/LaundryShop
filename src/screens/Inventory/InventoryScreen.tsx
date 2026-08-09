@@ -9,7 +9,6 @@
  */
 import { useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { format, startOfDay, endOfDay, subDays } from 'date-fns'
 import { db } from '../../data/db'
 import type { ExpectedUseRule, InventoryItem, InventoryUnit, Service, UseBasis } from '../../data/types'
 import { t } from '../../i18n/strings'
@@ -33,11 +32,11 @@ import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { Card, Button, Sheet, Field, Input, Select, Chip } from '../../components/ui'
 import { DataTable, type Column } from '../../components/DataTable'
-import { fmtDateTime, todayRange, weekRange, monthRange, inRange } from '../../app/format'
+import { DateRangePicker, useDateRange } from '../../components/DateRangePicker'
+import { fmtDateTime, inRange } from '../../app/format'
 
 const UNITS: InventoryUnit[] = ['kg', 'g', 'L', 'mL', 'pc', 'pack']
 const BASES: UseBasis[] = ['kg', 'piece', 'order']
-type Preset = 'today' | 'week' | 'month' | 'custom'
 
 // Native spinners crowd a cell this small, and the keyboard still steps the value.
 const CELL =
@@ -213,9 +212,8 @@ export function InventoryScreen() {
   const services = useLiveQuery(() => db.services.toArray(), []) ?? []
   const rules = useLiveQuery(() => db.expectedUseRules.toArray(), []) ?? []
 
-  const [preset, setPreset] = useState<Preset>('month')
-  const [customFrom, setCustomFrom] = useState('')
-  const [customTo, setCustomTo] = useState('')
+  const dateRange = useDateRange('month')
+  const { range } = dateRange
   const [detail, setDetail] = useState<InventoryItem | null>(null)
   const [moveOpen, setMoveOpen] = useState<'in' | 'out' | 'recount' | null>(null)
   const [moveForm, setMoveForm] = useState({ qty: '', cost: '', supplier: '', reason: '' })
@@ -229,16 +227,6 @@ export function InventoryScreen() {
     () => [...services].filter((s) => s.active).sort((a, b) => a.sortOrder - b.sortOrder),
     [services],
   )
-
-  const range = useMemo(() => {
-    if (preset === 'today') return todayRange()
-    if (preset === 'week') return weekRange()
-    if (preset === 'month') return monthRange()
-    return {
-      from: customFrom ? startOfDay(new Date(customFrom)) : startOfDay(subDays(new Date(), 30)),
-      to: customTo ? endOfDay(new Date(customTo)) : endOfDay(new Date()),
-    }
-  }, [preset, customFrom, customTo])
 
   const detailMoves = useMemo(
     () => (detailLive ? moves.filter((m) => m.itemId === detailLive.id).sort((a, b) => a.at.localeCompare(b.at)) : []),
@@ -472,26 +460,7 @@ export function InventoryScreen() {
       </div>
 
       {/* The period governs every usage figure in the table */}
-      {isOwner && (
-        <>
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
-            {(['today', 'week', 'month', 'custom'] as const).map((p) => (
-              <Chip key={p} selected={preset === p} onClick={() => setPreset(p)}>
-                {t(`reports.preset.${p}` as 'reports.preset.today')}
-              </Chip>
-            ))}
-          </div>
-          {preset === 'custom' && (
-            <div className="flex gap-2">
-              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
-              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
-            </div>
-          )}
-          <div className="font-mono text-xs text-ink-muted">
-            {format(range.from, 'MMM d, yyyy')} – {format(range.to, 'MMM d, yyyy')}
-          </div>
-        </>
-      )}
+      {isOwner && <DateRangePicker {...dateRange} />}
 
       <DataTable
         rows={rows}

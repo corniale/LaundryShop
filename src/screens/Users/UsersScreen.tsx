@@ -10,13 +10,27 @@ import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { Card, Button, Sheet, Field, Input, Chip } from '../../components/ui'
 import { DataTable } from '../../components/DataTable'
+import { DateRangePicker, useDateRange } from '../../components/DateRangePicker'
 import { fmtDateTime } from '../../app/format'
+
+/** A year of custom range could be tens of thousands of rows; say so rather than truncate quietly. */
+const AUDIT_CAP = 500
 
 export function UsersScreen() {
   const toast = useToast()
   const { currentUser } = useAuth()
   const users = useLiveQuery(() => db.users.toArray(), []) ?? []
-  const audit = useLiveQuery(() => db.auditEntries.orderBy('at').reverse().limit(300).toArray(), []) ?? []
+  // Defaults to today: the log is written on every action, so an unbounded
+  // view is thousands of rows the moment the shop has been open a week.
+  const dateRange = useDateRange('today')
+  const { range } = dateRange
+  const fromIso = range.from.toISOString()
+  const toIso = range.to.toISOString()
+  const audit =
+    useLiveQuery(
+      () => db.auditEntries.where('at').between(fromIso, toIso, true, true).reverse().limit(AUDIT_CAP).toArray(),
+      [fromIso, toIso],
+    ) ?? []
 
   const [formOpen, setFormOpen] = useState(false)
   const [pinTarget, setPinTarget] = useState<User | null>(null)
@@ -101,6 +115,9 @@ export function UsersScreen() {
       {/* Audit log */}
       <Card>
         <h2 className="mb-2 font-display text-base font-semibold">{t('users.audit')}</h2>
+        <div className="mb-2 flex flex-col gap-2">
+          <DateRangePicker {...dateRange} />
+        </div>
         <div className="-mx-1 mb-2 flex gap-1 overflow-x-auto px-1">
           <Chip selected={auditUser === null} onClick={() => setAuditUser(null)} className="!py-1 text-xs">
             {t('orders.all')}
@@ -121,6 +138,9 @@ export function UsersScreen() {
             </Chip>
           ))}
         </div>
+        {audit.length >= AUDIT_CAP && (
+          <p className="mb-2 text-xs text-attention-deep">{t('users.auditCapped', { n: AUDIT_CAP })}</p>
+        )}
         <DataTable
           rows={filteredAudit}
           getRowKey={(a) => a.id}

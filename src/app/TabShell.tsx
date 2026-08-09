@@ -10,7 +10,10 @@
  * - Everything transitions in 150ms; 48px targets throughout.
  */
 import { NavLink, Outlet } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../data/db'
 import { t } from '../i18n/strings'
+import { clientConfig } from '../config/client.config'
 import { Icon, type IconName } from '../components/Icons'
 
 const tabs = [
@@ -61,19 +64,32 @@ function BarItem({ to, label, icon }: { to: string; label: string; icon: IconNam
   )
 }
 
+/**
+ * The shop's own mark and name, not the product's. A shop that uploaded a
+ * logo should see it; one that has not gets the app icon, and either way the
+ * heading is the shop's name so the app reads as theirs.
+ */
+function Brand() {
+  const shop = useLiveQuery(() => db.shop.toArray(), [])?.[0]
+  const name = shop?.name?.trim() || clientConfig.appName
+  return (
+    <div className="mb-2 flex items-center gap-2.5 px-4 py-4">
+      {shop?.logoDataUrl ? (
+        <img src={shop.logoDataUrl} alt="" className="h-8 w-8 shrink-0 rounded-input object-cover" />
+      ) : (
+        <Icon name="orders" size={26} className="shrink-0 text-primary" />
+      )}
+      <div className="min-w-0 font-display text-md font-semibold leading-tight text-ink">{name}</div>
+    </div>
+  )
+}
+
 export function TabShell() {
   return (
     <div className="flex min-h-dvh w-full">
       {/* Left rail — tablet and desktop */}
       <nav className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface p-3 pt-safe md:flex">
-        <div className="mb-2 flex items-center gap-2.5 px-4 py-4">
-          <Icon name="orders" size={26} className="shrink-0 text-primary" />
-          <div className="font-display text-md font-semibold leading-tight text-ink">
-            Laundry
-            <br />
-            Shop OS
-          </div>
-        </div>
+        <Brand />
         <div className="flex flex-col gap-1">
           {tabs.map((tab) => (
             <RailItem key={tab.to} to={tab.to} label={t(tab.key)} icon={tab.icon} />

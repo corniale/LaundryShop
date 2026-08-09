@@ -396,6 +396,10 @@ const strings = {
   'users.changePin': { tl: 'Palitan ang PIN', en: 'Change PIN' },
   'users.audit': { tl: 'Audit log', en: 'Audit log' },
   'users.when': { tl: 'Kailan', en: 'When' },
+  'users.auditCapped': {
+    tl: 'Ang pinakabagong {n} lang ang nakikita. Paikliin ang petsa.',
+    en: 'Showing the newest {n} only. Narrow the dates to see the rest.',
+  },
   'users.action': { tl: 'Aksyon', en: 'Action' },
   'users.details': { tl: 'Detalye', en: 'Details' },
   'users.recoveryTitle': { tl: 'Recovery code mo', en: 'Your recovery code' },
@@ -474,8 +478,7 @@ const strings = {
 
   // ── Shop Settings ──────────────────────────────────────────────
   'settings.title': { tl: 'Shop Settings', en: 'Shop Settings' },
-  // Itsura — "look". Kept in both locales: it is the name of the section.
-  'settings.itsura': { tl: 'Itsura', en: 'Itsura' },
+  'settings.itsura': { tl: 'Itsura', en: 'Appearance' },
   'settings.itsuraHelp': {
     tl: 'Pumili ng kulay ng app. Agad itong mababago.',
     en: 'Pick the app’s colours. The change is instant.',
