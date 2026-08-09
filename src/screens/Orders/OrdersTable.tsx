@@ -14,7 +14,7 @@ import { StageDots, statusLabel } from '../../components/WashLine'
 import { fmtDate } from '../../app/format'
 import { payToneClass } from './OrdersScreen'
 
-export type OrderSortKey = 'code' | 'customer' | 'kilos' | 'total' | 'payment' | 'promised' | 'stage'
+export type OrderSortKey = 'code' | 'customer' | 'service' | 'kilos' | 'total' | 'payment' | 'promised' | 'stage'
 
 export interface OrderRow {
   order: Order
@@ -27,6 +27,8 @@ export function sortOrderRows(rows: OrderRow[], key: OrderSortKey, desc: boolean
     switch (key) {
       case 'customer':
         return r.customerName.toLowerCase()
+      case 'service':
+        return r.order.serviceNameSnapshot.toLowerCase()
       case 'kilos':
         return r.order.kilos
       case 'total':
@@ -117,10 +119,11 @@ export function OrdersTable({
             <tr className="border-b border-line bg-wash-deep">
               {th('code', t('stub.orderCode'), false, false)}
               {th('customer', t('orders.customer'), false, false)}
+              {th('service', t('orders.service'), false, false)}
               {th('kilos', t('orders.kilos'), true)}
               {th('total', t('orders.total'), true)}
-              {th('payment', t('payments.title'), false, false)}
-              {th('promised', t('orders.promised'), false, false)}
+              {th('payment', t('orders.paymentStatus'), false, false)}
+              {th('promised', t('orders.readyBy'), false, false)}
               {th('stage', t('orders.stage'), false, false)}
               <th className="px-3 text-right text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-muted">
                 {t('orders.nextStage')}
@@ -138,7 +141,8 @@ export function OrdersTable({
                   className={`cursor-pointer border-b border-line last:border-0 hover:bg-wash ${order.voidedAt ? 'opacity-50' : ''}`}
                 >
                   <td className="px-3 py-2.5 font-mono font-medium">{order.code}</td>
-                  <td className="max-w-[14rem] truncate px-3 py-2.5">{customerName}</td>
+                  <td className="max-w-[12rem] truncate px-3 py-2.5">{customerName}</td>
+                  <td className="max-w-[11rem] truncate px-3 py-2.5 text-ink-muted">{order.serviceNameSnapshot}</td>
                   <td className="px-3 py-2.5 text-right font-mono">{order.kilos}</td>
                   <td className="px-3 py-2.5 text-right font-mono font-medium">{formatCentavos(order.totalCentavos)}</td>
                   <td className="px-3 py-2.5">
@@ -197,8 +201,9 @@ export function OrdersTable({
                 )}
                 {!order.voidedAt && <NextButton status={order.status} onAdvance={(to) => onAdvance(order, to)} />}
               </div>
-              <div className={`mt-1 text-xs ${overdue ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}>
-                {order.kilos} {t('orders.kg')} · {t('orders.promised')}: {fmtDate(order.promisedAt)}
+              <div className="mt-1 truncate text-xs text-ink-muted">{order.serviceNameSnapshot}</div>
+              <div className={`text-xs ${overdue ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}>
+                {order.kilos} {t('orders.kg')} · {t('orders.readyBy')}: {fmtDate(order.promisedAt)}
               </div>
             </div>
           )
