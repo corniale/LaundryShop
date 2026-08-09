@@ -48,7 +48,10 @@ export function OrdersScreen() {
   const toast = useToast()
   const { currentUser } = useAuth()
   const [params, setParams] = useSearchParams()
-  const statusFilter = (params.get('status') as OrderStatus | null) ?? null
+  // 'active' (default) hides claimed orders — the counter's normal view.
+  const statusParam = params.get('status')
+  const statusFilter: OrderStatus | 'active' | 'all' =
+    statusParam === 'all' ? 'all' : statusParam ? (statusParam as OrderStatus) : 'active'
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search, 250)
   const [fromDate, setFromDate] = useState('')
@@ -96,6 +99,11 @@ export function OrdersScreen() {
     return c
   }, [orders])
 
+  const activeCount = useMemo(
+    () => orders.filter((o) => !o.voidedAt && o.status !== 'claimed').length,
+    [orders],
+  )
+
   // Search + date filters apply to both views; the status filter is list-only
   // (the board shows every stage by definition).
   const searched = useMemo(() => {
@@ -115,7 +123,12 @@ export function OrdersScreen() {
   }, [orders, debouncedSearch, fromDate, toDate, customersById])
 
   const filtered = useMemo(
-    () => searched.filter((o) => !statusFilter || o.status === statusFilter),
+    () =>
+      searched.filter((o) => {
+        if (statusFilter === 'all') return true
+        if (statusFilter === 'active') return o.status !== 'claimed' && !o.voidedAt
+        return o.status === statusFilter
+      }),
     [searched, statusFilter],
   )
 
@@ -220,7 +233,10 @@ export function OrdersScreen() {
 
       {view === 'list' && (
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-          <Chip selected={statusFilter === null} onClick={() => setParams({})}>
+          <Chip selected={statusFilter === 'active'} onClick={() => setParams({})}>
+            {t('orders.active')} ({activeCount})
+          </Chip>
+          <Chip selected={statusFilter === 'all'} onClick={() => setParams({ status: 'all' })}>
             {t('orders.all')} ({orders.filter((o) => !o.voidedAt).length})
           </Chip>
           {STATUS_ORDER.map((s) => (
@@ -231,13 +247,29 @@ export function OrdersScreen() {
         </div>
       )}
 
-      <details className="text-sm">
-        <summary className="min-h-touch cursor-pointer py-2 font-medium text-ink-muted">{t('orders.dateRange')}</summary>
-        <div className="flex gap-2 pb-2">
-          <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-        </div>
-      </details>
+      {/* Date range — always visible, not hidden behind a disclosure */}
+      <div className="flex flex-wrap items-end gap-2 rounded-card border border-line bg-surface p-3">
+        <label className="flex flex-col gap-1">
+          <span className="label-caps">{t('orders.dateFrom')}</span>
+          <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="!w-auto" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="label-caps">{t('orders.dateTo')}</span>
+          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="!w-auto" />
+        </label>
+        {(fromDate || toDate) && (
+          <Button
+            variant="ghost"
+            className="!py-2 text-sm"
+            onClick={() => {
+              setFromDate('')
+              setToDate('')
+            }}
+          >
+            {t('orders.dateClear')}
+          </Button>
+        )}
+      </div>
 
       {view === 'board' ? (
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
