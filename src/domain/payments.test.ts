@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { paidCentavos, balanceCentavos, paymentStatus, buildReversal, agingBucket } from './payments'
+import { paidCentavos, balanceCentavos, paymentStatus, buildReversal, agingBucket, lastPaymentAt } from './payments'
 import type { Payment } from '../data/types'
 
 const pay = (amount: number, extra: Partial<Payment> = {}): Payment => ({
@@ -41,6 +41,32 @@ describe('payment derivation', () => {
 
   it('zero payments → unpaid', () => {
     expect(paymentStatus(48000, [])).toBe('unpaid')
+  })
+})
+
+describe('lastPaymentAt', () => {
+  it('is null when nothing has been collected', () => {
+    expect(lastPaymentAt([])).toBeNull()
+  })
+
+  it('takes the most recent entry, whatever order the ledger is in', () => {
+    const early = pay(10000, { receivedAt: '2026-08-01T10:00:00.000Z' })
+    const late = pay(5000, { receivedAt: '2026-08-06T16:30:00.000Z' })
+    expect(lastPaymentAt([early, late])).toBe(late.receivedAt)
+    expect(lastPaymentAt([late, early])).toBe(late.receivedAt)
+  })
+
+  it('ignores a reversal and the payment it cancels', () => {
+    const kept = pay(10000, { receivedAt: '2026-08-01T10:00:00.000Z' })
+    const undone = pay(20000, { id: 'p2', receivedAt: '2026-08-04T09:00:00.000Z', reversedByPaymentId: 'r1' })
+    const reversal = buildReversal(undone, 'r1', 'owner', '2026-08-05T09:00:00.000Z', 'Mali')
+    expect(lastPaymentAt([kept, undone, reversal])).toBe(kept.receivedAt)
+  })
+
+  it('is null when every payment has been reversed', () => {
+    const undone = pay(20000, { id: 'p1', reversedByPaymentId: 'r1' })
+    const reversal = buildReversal(undone, 'r1', 'owner', '2026-08-02T10:00:00.000Z', 'Mali')
+    expect(lastPaymentAt([undone, reversal])).toBeNull()
   })
 })
 

@@ -193,7 +193,7 @@ export function TodayScreen() {
           label={t('today.incomeToday')}
           value={formatCentavos(collectedToday)}
           tone="accent"
-          onClick={() => navigate('/payments?tab=all')}
+          onClick={() => navigate('/payments?tab=all&range=today')}
         />
         <Stat
           label={t('today.outstanding')}
