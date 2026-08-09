@@ -52,12 +52,17 @@ export function OrdersScreen() {
   const [params, setParams] = useSearchParams()
   // 'active' (default) hides claimed orders — the counter's normal view.
   const statusParam = params.get('status')
-  const statusFilter: OrderStatus | 'active' | 'all' =
-    statusParam === 'all' ? 'all' : statusParam ? (statusParam as OrderStatus) : 'active'
+  const statusFilter: OrderStatus | 'active' | 'all' | 'inprogress' =
+    statusParam === 'all' || statusParam === 'inprogress'
+      ? statusParam
+      : statusParam
+        ? (statusParam as OrderStatus)
+        : 'active'
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounced(search, 250)
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
+  // Seeded from the URL so Today's tiles can deep-link a date range.
+  const [fromDate, setFromDate] = useState(params.get('from') ?? '')
+  const [toDate, setToDate] = useState(params.get('to') ?? '')
   const [limit, setLimit] = useState(PAGE)
   const [intakeOpen, setIntakeOpen] = useState(false)
   // Default: earliest stage first, so active work leads and claimed
@@ -129,6 +134,8 @@ export function OrdersScreen() {
       searched.filter((o) => {
         if (statusFilter === 'all') return true
         if (statusFilter === 'active') return o.status !== 'claimed' && !o.voidedAt
+        if (statusFilter === 'inprogress')
+          return !o.voidedAt && (o.status === 'washing' || o.status === 'drying')
         return o.status === statusFilter
       }),
     [searched, statusFilter],
@@ -237,6 +244,9 @@ export function OrdersScreen() {
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           <Chip selected={statusFilter === 'active'} onClick={() => setParams({})}>
             {t('orders.active')} ({activeCount})
+          </Chip>
+          <Chip selected={statusFilter === 'inprogress'} onClick={() => setParams({ status: 'inprogress' })}>
+            {t('orders.inProgress')} ({counts.washing + counts.drying})
           </Chip>
           <Chip selected={statusFilter === 'all'} onClick={() => setParams({ status: 'all' })}>
             {t('orders.all')} ({orders.filter((o) => !o.voidedAt).length})

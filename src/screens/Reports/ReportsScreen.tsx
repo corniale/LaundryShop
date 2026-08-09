@@ -10,6 +10,7 @@ import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
 import { balanceCentavos } from '../../domain/payments'
 import { Card, Chip, Input, Button, EmptyState } from '../../components/ui'
+import { DataTable } from '../../components/DataTable'
 import { todayRange, weekRange, monthRange, inRange, downloadCsv } from '../../app/format'
 import { toCsv } from '../../domain/csv'
 
@@ -253,30 +254,46 @@ export function ReportsScreen() {
 
       <Card>
         <h2 className="mb-2 font-display text-base font-semibold">{t('reports.staff')}</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-wash-deep text-left text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-muted">
-                <th className="rounded-l-input px-2 py-1.5">{t('users.name')}</th>
-                <th className="px-2 py-1.5 text-right">{t('reports.staffOrders')}</th>
-                <th className="px-2 py-1.5 text-right">{t('reports.staffStatus')}</th>
-                <th className="rounded-r-input px-2 py-1.5 text-right">{t('reports.staffPayments')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {staffActivity.map((s, i) => (
-                <tr key={i} className="border-b border-line last:border-0">
-                  <td className="px-2 py-1.5">
-                    {s.name} <span className="text-xs text-ink-muted">({s.role})</span>
-                  </td>
-                  <td className="px-2 py-1.5 text-right font-mono">{s.orders}</td>
-                  <td className="px-2 py-1.5 text-right font-mono">{s.statusChanges}</td>
-                  <td className="px-2 py-1.5 text-right font-mono">{s.payments}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          rows={staffActivity}
+          getRowKey={(s) => s.name}
+          initialSortKey="orders"
+          emptyText={t('reports.empty')}
+          columns={[
+            {
+              key: 'name',
+              header: t('users.name'),
+              sortValue: (s) => s.name.toLowerCase(),
+              defaultDesc: false,
+              render: (s) => (
+                <span>
+                  {s.name} <span className="text-xs text-ink-muted">({s.role})</span>
+                </span>
+              ),
+            },
+            {
+              key: 'orders',
+              header: t('reports.staffOrders'),
+              align: 'right',
+              sortValue: (s) => s.orders,
+              render: (s) => <span className="font-mono">{s.orders}</span>,
+            },
+            {
+              key: 'status',
+              header: t('reports.staffStatus'),
+              align: 'right',
+              sortValue: (s) => s.statusChanges,
+              render: (s) => <span className="font-mono">{s.statusChanges}</span>,
+            },
+            {
+              key: 'payments',
+              header: t('reports.staffPayments'),
+              align: 'right',
+              sortValue: (s) => s.payments,
+              render: (s) => <span className="font-mono">{s.payments}</span>,
+            },
+          ]}
+        />
       </Card>
     </div>
   )

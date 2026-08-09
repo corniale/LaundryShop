@@ -42,6 +42,9 @@ const strings = {
   'today.notClaimed': { tl: 'Hindi pa nakukuha', en: 'Not yet claimed' },
   'today.overdue': { tl: 'Lagpas na', en: 'Overdue' },
   'today.lowStock': { tl: 'Paubos na', en: 'Low stock' },
+  'today.inProgress': { tl: 'Ginagawa', en: 'In progress' },
+  'today.lowStockCount': { tl: '{n} item', en: '{n} items' },
+  'today.allStocked': { tl: 'Sapat lahat', en: 'All stocked' },
   'today.closeDay': { tl: 'Isara ang araw', en: 'Close the day' },
   'today.closeDaySummary': { tl: 'Buod ng araw', en: 'Day summary' },
   'today.emptyOrders': {
@@ -85,6 +88,7 @@ const strings = {
   },
   'orders.all': { tl: 'Lahat', en: 'All' },
   'orders.active': { tl: 'Hindi pa tapos', en: 'Active' },
+  'orders.inProgress': { tl: 'Ginagawa', en: 'In progress' },
   'orders.dateFrom': { tl: 'Mula', en: 'From' },
   'orders.dateTo': { tl: 'Hanggang', en: 'To' },
   'orders.dateClear': { tl: 'I-clear', en: 'Clear' },
@@ -241,6 +245,10 @@ const strings = {
   'payments.aging.8-30': { tl: '8–30 araw', en: '8–30 days' },
   'payments.aging.31+': { tl: '31+ araw', en: '31+ days' },
   'payments.empty': { tl: 'Walang bayad na naitala.', en: 'No payments recorded.' },
+  'payments.date': { tl: 'Petsa', en: 'Date' },
+  'payments.orderDate': { tl: 'Petsa ng order', en: 'Order date' },
+  'payments.recordedBy': { tl: 'Naitala ni', en: 'Recorded by' },
+  'payments.note': { tl: 'Tala', en: 'Note' },
   'payments.allPaid': { tl: 'Lahat bayad na. 🎉', en: 'Everything is paid. 🎉' },
 
   // ── Inventory ──────────────────────────────────────────────────
@@ -309,6 +317,9 @@ const strings = {
   'users.activate': { tl: 'I-activate', en: 'Activate' },
   'users.changePin': { tl: 'Palitan ang PIN', en: 'Change PIN' },
   'users.audit': { tl: 'Audit log', en: 'Audit log' },
+  'users.when': { tl: 'Kailan', en: 'When' },
+  'users.action': { tl: 'Aksyon', en: 'Action' },
+  'users.details': { tl: 'Detalye', en: 'Details' },
   'users.recoveryTitle': { tl: 'Recovery code mo', en: 'Your recovery code' },
   'users.recoveryBody': {
     tl: 'Isulat ito sa printed na quick guide. Isang beses lang ito ipapakita. Ito ang susi kapag nakalimutan mo ang PIN.',
