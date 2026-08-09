@@ -150,10 +150,12 @@ export function StatusRail({
                   }`}
                   style={{
                     transform: now ? 'scale(1.12)' : 'scale(1)',
+                    // Unfilled, but opaque: a see-through node would let
+                    // the connector line cross the icon behind it.
                     backgroundColor: done
                       ? 'var(--rail-accent)'
                       : now
-                        ? 'transparent'
+                        ? 'var(--surface)'
                         : 'var(--wash-deep)',
                     border: now
                       ? '2px solid var(--rail-accent)'

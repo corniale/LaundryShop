@@ -90,6 +90,8 @@ const strings = {
   'orders.dateClear': { tl: 'I-clear', en: 'Clear' },
   'orders.paymentStatus': { tl: 'Bayad', en: 'Payment status' },
   'orders.readyBy': { tl: 'Handa sa', en: 'Ready for pick-up by' },
+  'orders.editPickupDate': { tl: 'Baguhin ang petsa ng kuhaan', en: 'Change pick-up date' },
+  'orders.pickupDateSaved': { tl: 'Na-save ang petsa.', en: 'Pick-up date saved.' },
   'orders.customer': { tl: 'Suki', en: 'Customer' },
   'orders.walkIn': { tl: 'Walk-in', en: 'Walk-in' },
   'orders.walkInName': { tl: 'Pangalan ng walk-in', en: 'Walk-in name' },
