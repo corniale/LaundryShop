@@ -319,14 +319,8 @@ const strings = {
   'inventory.unit': { tl: 'Unit', en: 'Unit' },
   'inventory.usageReport': { tl: 'Gamit at gastos', en: 'Usage & cost' },
   'inventory.expected': { tl: 'Inaasahang gamit', en: 'Expected use' },
-  'inventory.actual': { tl: 'Aktwal', en: 'Actual' },
   'inventory.varianceFlag': { tl: 'Suriin — malayo sa inaasahan', en: 'Check — far from expected' },
-  'inventory.expectedNote': {
-    tl: 'Hindi kailanman binabawasan ng app ang stock nang kusa. Ikaw lang ang nagbabago ng bilang.',
-    en: 'The app never deducts stock on its own. Only you change the count.',
-  },
   'inventory.rules': { tl: 'Expected use kada serbisyo', en: 'Expected use per service' },
-  'inventory.qtyPerKg': { tl: 'Dami kada kilo', en: 'Qty per kg' },
   'inventory.empty': { tl: 'Wala pang item. Idagdag ang mga supplies mo.', en: 'No items yet. Add your supplies.' },
   'inventory.item': { tl: 'Item', en: 'Item' },
   'inventory.onHand': { tl: 'Natitira', en: 'On hand' },
@@ -345,10 +339,23 @@ const strings = {
     tl: 'Ang “Nagamit” ay galing lang sa mga Labas na naitala ng tao. Ang “Inaasahan” ay bilang lang — hindi ito gumagalaw ng stock.',
     en: 'Used counts only the stock-outs someone recorded. Expected is a calculation from the kilos washed — it never moves stock on its own.',
   },
-  'inventory.ruleFor': { tl: 'Panuntunan para sa {item}', en: 'Rule for {item}' },
-  'inventory.ruleExisting': { tl: 'Mga panuntunan ngayon', en: 'Current rules' },
-  'inventory.ruleNone': { tl: 'Wala pang panuntunan.', en: 'No rules yet.' },
-  'inventory.ruleAdd': { tl: 'Bagong panuntunan', en: 'New rule' },
+  'inventory.basis': { tl: 'Kada', en: 'Per' },
+  'inventory.basis.kg': { tl: 'kada kilo', en: 'per kilo' },
+  'inventory.basis.piece': { tl: 'kada piraso', en: 'per piece' },
+  'inventory.basis.order': { tl: 'kada order', en: 'per order' },
+  'inventory.rulesHelp': {
+    tl: 'Ilagay ang dami na nagagamit sa bawat kilo, piraso, o order. Blangko = walang panuntunan.',
+    en: 'Enter how much each service uses per kilo, per piece, or per order. Blank means no rule.',
+  },
+  'inventory.rulesPieceNote': {
+    tl: 'Ang kada piraso ay binibilang lang sa mga order na may bilang ng piraso.',
+    en: 'Per-piece rules only count orders where a piece count was entered.',
+  },
+  'inventory.rulesEmpty': {
+    tl: 'Magdagdag muna ng serbisyo at item.',
+    en: 'Add a service and an item first.',
+  },
+  'inventory.service': { tl: 'Serbisyo', en: 'Service' },
 
   // ── Reports ────────────────────────────────────────────────────
   'reports.title': { tl: 'Reports', en: 'Reports' },
@@ -467,6 +474,15 @@ const strings = {
 
   // ── Shop Settings ──────────────────────────────────────────────
   'settings.title': { tl: 'Shop Settings', en: 'Shop Settings' },
+  // Itsura — "look". Kept in both locales: it is the name of the section.
+  'settings.itsura': { tl: 'Itsura', en: 'Itsura' },
+  'settings.itsuraHelp': {
+    tl: 'Pumili ng kulay ng app. Agad itong mababago.',
+    en: 'Pick the app’s colours. The change is instant.',
+  },
+  'settings.theme.coldwash': { tl: 'Cold Wash', en: 'Cold Wash' },
+  'settings.theme.bubblegum': { tl: 'Bubblegum', en: 'Bubblegum' },
+  'settings.themeSelected': { tl: 'Napili', en: 'Selected' },
   'settings.shopName': { tl: 'Pangalan ng shop', en: 'Shop name' },
   'settings.ownerName': { tl: 'Pangalan ng may-ari', en: 'Owner name' },
   'settings.address': { tl: 'Address', en: 'Address' },

@@ -39,10 +39,10 @@ const STATUS_VAR: Record<OrderStatus, string> = {
 
 export function payToneClass(status: 'unpaid' | 'partial' | 'paid'): string {
   return status === 'unpaid'
-    ? 'bg-danger-500/10 text-danger-700'
+    ? 'bg-attention-soft text-attention-deep'
     : status === 'partial'
-      ? 'bg-sun-500/15 text-sun-700'
-      : 'bg-accent-400/30 text-accent-700'
+      ? 'bg-attention-soft text-attention-deep'
+      : 'bg-positive-soft text-positive-deep'
 }
 
 export function OrdersScreen() {
@@ -219,7 +219,7 @@ export function OrdersScreen() {
               aria-selected={view === v}
               onClick={() => setView(v)}
               className={`min-h-touch rounded-[10px] px-3 text-sm font-semibold ${
-                view === v ? 'bg-primary-500 text-on-primary' : 'text-ink-muted'
+                view === v ? 'bg-primary text-on-primary' : 'text-ink-muted'
               }`}
             >
               {t(v === 'list' ? 'orders.viewList' : 'orders.viewBoard')}
@@ -292,7 +292,7 @@ export function OrdersScreen() {
             return (
               <section
                 key={s}
-                className="w-[82vw] max-w-[300px] shrink-0 snap-start rounded-card border border-line bg-wash-deep p-2 md:w-[264px]"
+                className="w-[82vw] max-w-[300px] shrink-0 snap-start rounded-card border border-line bg-wash p-2 md:w-[264px]"
                 aria-label={statusLabel(s)}
               >
                 {/* Header carries the column's identity and load, so the
@@ -328,7 +328,7 @@ export function OrdersScreen() {
                         }`}
                         style={
                           overdue
-                            ? { borderLeft: '3px solid var(--danger-500)', paddingLeft: 'calc(0.75rem - 2px)' }
+                            ? { borderLeft: '3px solid var(--attention)', paddingLeft: 'calc(0.75rem - 2px)' }
                             : undefined
                         }
                       >
@@ -353,7 +353,7 @@ export function OrdersScreen() {
                             {o.kilos} {t('orders.kg')}
                           </span>
                           <span>·</span>
-                          <span className={overdue ? 'font-semibold text-danger-700' : ''}>
+                          <span className={overdue ? 'font-semibold text-attention-deep' : ''}>
                             {fmtDate(o.promisedAt)}
                           </span>
                           {/* Exception-based: only flag what still owes money */}
@@ -391,7 +391,7 @@ export function OrdersScreen() {
                         setView('list')
                         setParams({ status: 'claimed' })
                       }}
-                      className="min-h-touch rounded-input px-3 text-sm font-semibold text-primary-600"
+                      className="min-h-touch rounded-input px-3 text-sm font-semibold text-primary-deep"
                     >
                       {t('orders.viewAllClaimed')} ({counts.claimed}) →
                     </button>

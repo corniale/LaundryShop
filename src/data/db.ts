@@ -17,7 +17,7 @@ import type {
   Draft,
 } from './types'
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export class LaundryDB extends Dexie {
   shop!: Table<Shop, string>
@@ -55,6 +55,22 @@ export class LaundryDB extends Dexie {
       appMeta: 'id',
       drafts: 'id, kind, updatedAt',
     })
+
+    // v2: an expected-use rule can be measured per kilo, per piece, or per
+    // order, so the per-kilo-only field becomes a quantity plus a basis.
+    this.version(2)
+      .stores({ expectedUseRules: 'id, serviceId, itemId' })
+      .upgrade(async (tx) => {
+        await tx
+          .table('expectedUseRules')
+          .toCollection()
+          .modify((r: { qtyPer?: number; qtyPerKg?: number; basis?: string }) => {
+            if (r.qtyPer !== undefined) return
+            r.qtyPer = r.qtyPerKg ?? 0
+            r.basis = 'kg'
+            delete r.qtyPerKg
+          })
+      })
   }
 }
 

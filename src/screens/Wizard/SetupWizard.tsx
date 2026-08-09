@@ -205,9 +205,9 @@ export function SetupWizard() {
         <Field label={t('users.pinConfirm')}>
           <Input type="password" inputMode="numeric" className="font-mono" value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, '').slice(0, 6))} />
         </Field>
-        {pin && pin2 && pin !== pin2 && <p className="text-sm text-danger-700">{t('users.pinMismatch')}</p>}
-        <Card className="!bg-primary-100 text-center">
-          <div className="text-sm font-medium text-primary-800">{t('users.recoveryTitle')}</div>
+        {pin && pin2 && pin !== pin2 && <p className="text-sm text-attention-deep">{t('users.pinMismatch')}</p>}
+        <Card className="!bg-primary-soft text-center">
+          <div className="text-sm font-medium text-primary-deep">{t('users.recoveryTitle')}</div>
           <div className="my-2 font-mono text-lg font-medium tracking-wider">{recoveryCode}</div>
           <p className="text-xs text-ink-muted">{t('users.recoveryBody')}</p>
         </Card>
@@ -228,7 +228,7 @@ export function SetupWizard() {
     5: (
       <>
         <p className="text-ink-muted">{isIOS ? t('wizard.step5.ios') : t('wizard.step5.android')}</p>
-        <div className="rounded-card bg-wash-deep p-6 text-center text-4xl" aria-hidden>
+        <div className="rounded-card bg-wash p-6 text-center text-4xl" aria-hidden>
           {isIOS ? '⬆️ → ➕' : '⋮ → ➕'}
         </div>
         <label className="flex min-h-touch items-center gap-2 text-sm">
@@ -284,7 +284,7 @@ export function SetupWizard() {
         )}
         {backupState === 'ok' && (
           <>
-            <p className="rounded-card bg-accent-400/30 p-4 text-center font-medium text-accent-700">{t('wizard.done')}</p>
+            <p className="rounded-card bg-positive-soft p-4 text-center font-medium text-positive-deep">{t('wizard.done')}</p>
             <Button
               onClick={() => {
                 lock()
@@ -318,7 +318,7 @@ export function SetupWizard() {
         <h1 className="font-display text-lg font-bold">{titles[step]}</h1>
         <div className="mt-2 flex gap-1">
           {[1, 2, 3, 4, 5, 6, 7].map((s) => (
-            <div key={s} className={`h-1.5 flex-1 rounded-pill ${s <= step ? 'bg-primary-500' : 'bg-line'}`} />
+            <div key={s} className={`h-1.5 flex-1 rounded-pill ${s <= step ? 'bg-primary' : 'bg-line'}`} />
           ))}
         </div>
       </div>

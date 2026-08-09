@@ -113,12 +113,12 @@ export function OrderDetailScreen() {
   return (
     <div className="flex flex-col gap-3 p-4">
       <div className="flex items-center gap-2">
-        <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch text-primary-600" aria-label="Back">
+        <button onClick={() => navigate(-1)} className="min-h-touch min-w-touch text-primary-deep" aria-label="Back">
           ←
         </button>
         <h1 className="font-mono text-lg font-medium">{order.code}</h1>
         {order.voidedAt && (
-          <span className="rounded-pill bg-danger-500/10 px-2 py-0.5 text-xs font-bold text-danger-700">
+          <span className="rounded-pill bg-attention-soft px-2 py-0.5 text-xs font-bold text-attention-deep">
             {t('orders.voidedBadge')} — {order.voidReason}
           </span>
         )}
@@ -158,7 +158,7 @@ export function OrderDetailScreen() {
           </div>
         )}
         {order.discountCentavos > 0 && (
-          <div className="flex justify-between text-sm text-accent-700">
+          <div className="flex justify-between text-sm text-positive-deep">
             <span>
               {t('orders.discount')} {order.discountReason && `(${order.discountReason})`}
             </span>
@@ -173,7 +173,7 @@ export function OrderDetailScreen() {
           </div>
           <div className="flex justify-between font-semibold">
             <span>{t('orders.balance')}</span>
-            <span className={`font-mono ${balance > 0 ? 'text-danger-700' : 'text-accent-700'}`}>
+            <span className={`font-mono ${balance > 0 ? 'text-attention-deep' : 'text-positive-deep'}`}>
               {formatCentavos(balance)}
             </span>
           </div>
@@ -186,7 +186,7 @@ export function OrderDetailScreen() {
                   setEditPromised(order.promisedAt.slice(0, 10))
                   setEditOpen(true)
                 }}
-                className="inline-flex min-h-touch items-center gap-1 font-medium text-primary-600 underline decoration-dotted underline-offset-4"
+                className="inline-flex min-h-touch items-center gap-1 font-medium text-primary-deep underline decoration-dotted underline-offset-4"
                 aria-label={t('orders.editPickupDate')}
               >
                 {fmtDateFull(order.promisedAt)}
@@ -261,7 +261,7 @@ export function OrderDetailScreen() {
               at: p.receivedAt,
               text: `${p.amountCentavos < 0 ? t('payments.reversedBadge') + ' ' : ''}${formatCentavos(p.amountCentavos)} (${t(`payments.method.${p.method}` as 'payments.method.cash')})${p.reference ? ` · ${p.reference}` : ''}${p.reason ? ` · ${p.reason}` : ''}`,
               by: usersById.get(p.byUserId) ?? '—',
-              tone: p.amountCentavos < 0 ? 'text-danger-700' : 'text-accent-700',
+              tone: p.amountCentavos < 0 ? 'text-attention-deep' : 'text-positive-deep',
             })),
           ]
             .sort((a, b) => a.at.localeCompare(b.at))
@@ -282,7 +282,7 @@ export function OrderDetailScreen() {
                 .map((p) => (
                   <button
                     key={p.id}
-                    className="min-h-touch text-sm font-medium text-danger-700"
+                    className="min-h-touch text-sm font-medium text-attention-deep"
                     onClick={() => setReverseTarget(p.id)}
                   >
                     {t('payments.reverse')}: {formatCentavos(p.amountCentavos)}
@@ -317,7 +317,7 @@ export function OrderDetailScreen() {
             <Input placeholder={t('payments.reference')} value={payReference} onChange={(e) => setPayReference(e.target.value)} />
           )}
           {confirmOverpay && (
-            <p className="rounded-input bg-sun-500/15 p-3 text-sm text-sun-700">
+            <p className="rounded-input bg-attention-soft p-3 text-sm text-attention-deep">
               {t('payments.overpay', { balance: formatCentavos(balance) })}
             </p>
           )}

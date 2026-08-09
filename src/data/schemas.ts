@@ -126,7 +126,7 @@ export const paymentSchema = z.object({
 export const inventoryItemSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
-  unit: z.enum(['kg', 'L', 'pc', 'pack']),
+  unit: z.enum(['kg', 'g', 'L', 'mL', 'pc', 'pack']),
   currentQty: z.number(),
   reorderPoint: z.number().min(0),
   costPerUnitCentavos: nonNegCentavos.optional(),
@@ -149,11 +149,15 @@ export const inventoryMoveSchema = z.object({
   demo: z.boolean().optional(),
 })
 
+// qtyPer/basis are optional here and required in the type: a v1 backup carries
+// only qtyPerKg, and migrateBackup fills the v2 fields before anything is read.
 export const expectedUseRuleSchema = z.object({
   id: z.string(),
   serviceId: z.string(),
   itemId: z.string(),
-  qtyPerKg: z.number().min(0),
+  qtyPer: z.number().min(0).optional(),
+  basis: z.enum(['kg', 'piece', 'order']).optional(),
+  qtyPerKg: z.number().min(0).optional(),
   demo: z.boolean().optional(),
   updatedAt: iso,
 })

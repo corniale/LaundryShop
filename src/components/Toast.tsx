@@ -29,12 +29,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {toast && (
         <div
           role="status"
-          className="fixed inset-x-4 bottom-24 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-card bg-primary-800 px-4 py-3 text-surface shadow-card md:bottom-8"
+          className="fixed inset-x-4 bottom-24 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-card bg-primary-deep px-4 py-3 text-surface shadow-card md:bottom-8"
         >
           <span className="text-sm">{toast.message}</span>
           {toast.onUndo && (
             <button
-              className="min-h-touch shrink-0 rounded-input px-2 font-semibold text-primary-300"
+              className="min-h-touch shrink-0 rounded-input px-2 font-semibold text-primary-deep"
               onClick={() => {
                 toast.onUndo?.()
                 setToast(null)

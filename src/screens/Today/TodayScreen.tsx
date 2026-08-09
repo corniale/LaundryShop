@@ -113,10 +113,10 @@ export function TodayScreen() {
 
   const chipClass =
     health.health === 'ok'
-      ? 'bg-accent-400/30 text-accent-700'
+      ? 'bg-positive-soft text-positive-deep'
       : health.health === 'stale'
-        ? 'bg-sun-500/15 text-sun-700'
-        : 'bg-danger-500/10 text-danger-700'
+        ? 'bg-attention-soft text-attention-deep'
+        : 'bg-attention-soft text-attention-deep'
   const chipText =
     health.health === 'ok'
       ? t('backup.chip.today')
@@ -143,7 +143,7 @@ export function TodayScreen() {
       </button>
 
       {appMeta?.demoMode && (
-        <Card className="flex items-center justify-between gap-3 !bg-primary-100">
+        <Card className="flex items-center justify-between gap-3 !bg-primary-soft">
           <p className="text-sm">{t('today.demoStrip')}</p>
           <Button variant="primary" className="shrink-0 !py-2 text-sm" onClick={() => navigate('/wizard')}>
             {t('today.demoStart')}
@@ -152,13 +152,13 @@ export function TodayScreen() {
       )}
 
       {appMeta && !appMeta.storagePersisted && !appMeta.demoMode && (
-        <div className="rounded-card bg-sun-500/15 px-4 py-3 text-sm text-sun-700">
+        <div className="rounded-card bg-attention-soft px-4 py-3 text-sm text-attention-deep">
           {t('today.persistWarning')}
         </div>
       )}
 
       {storagePct !== null && (
-        <div className="rounded-card bg-danger-500/10 px-4 py-3 text-sm text-danger-700">
+        <div className="rounded-card bg-attention-soft px-4 py-3 text-sm text-attention-deep">
           {t('backupData.storageWarning')} ({Math.round(storagePct)}%)
         </div>
       )}
@@ -186,19 +186,19 @@ export function TodayScreen() {
         <Stat
           label={t('today.needsRelease')}
           value={String(dueOut.length)}
-          tone={dueOut.length ? 'sun' : undefined}
+          tone={dueOut.length ? 'attention' : undefined}
           onClick={() => navigate('/orders?status=ready')}
         />
         <Stat
           label={t('today.incomeToday')}
           value={formatCentavos(collectedToday)}
-          tone="accent"
+          tone="positive"
           onClick={() => navigate('/payments?tab=all&range=today')}
         />
         <Stat
           label={t('today.outstanding')}
           value={formatCentavos(outstanding)}
-          tone={outstanding > 0 ? 'danger' : undefined}
+          tone={outstanding > 0 ? 'attention' : undefined}
           onClick={() => navigate('/payments?tab=unpaid')}
         />
         <Stat
@@ -207,7 +207,7 @@ export function TodayScreen() {
             lowStock.length > 0 ? t('today.lowStockCount', { n: lowStock.length }) : t('today.allStocked')
           }
           hint={lowStock.length > 0 ? lowStock.map((i) => i.name).join(', ') : undefined}
-          tone={lowStock.length > 0 ? 'sun' : undefined}
+          tone={lowStock.length > 0 ? 'attention' : undefined}
           onClick={() => navigate('/more/inventory')}
         />
       </div>
@@ -245,7 +245,7 @@ export function TodayScreen() {
               render: (o) => {
                 const days = Math.floor((now.getTime() - new Date(o.promisedAt).getTime()) / 86_400_000)
                 return (
-                  <span className={`whitespace-nowrap text-xs ${days >= 3 ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
+                  <span className={`whitespace-nowrap text-xs ${days >= 3 ? 'font-semibold text-attention-deep' : 'text-ink-muted'}`}>
                     {fmtDate(o.promisedAt)}
                     {days >= 3 ? ` · ${t('today.overdue')} ${days}d` : ''}
                   </span>
@@ -287,7 +287,7 @@ export function TodayScreen() {
                 </div>
                 <div className="truncate text-sm">{customerName(o)}</div>
                 <div className="mt-1 flex items-center justify-between gap-2">
-                  <span className={`text-xs ${days >= 3 ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
+                  <span className={`text-xs ${days >= 3 ? 'font-semibold text-attention-deep' : 'text-ink-muted'}`}>
                     {t('orders.readyBy')}: {fmtDate(o.promisedAt)}
                     {days >= 3 ? ` · ${t('today.overdue')} ${days}d` : ''}
                   </span>
@@ -321,8 +321,8 @@ export function TodayScreen() {
               label={t('today.kilosToday')}
               value={`${todayOrders.reduce((s, o) => s + o.kilos, 0).toFixed(1)} kg`}
             />
-            <Stat label={t('today.incomeToday')} value={formatCentavos(collectedToday)} tone="accent" />
-            <Stat label={t('today.outstanding')} value={formatCentavos(outstanding)} tone="danger" />
+            <Stat label={t('today.incomeToday')} value={formatCentavos(collectedToday)} tone="positive" />
+            <Stat label={t('today.outstanding')} value={formatCentavos(outstanding)} tone="attention" />
           </div>
           <div className="rounded-card bg-surface p-3 shadow-card">
             <div className="mb-1 text-xs font-medium text-ink-muted">{t('today.collectionsByMethod')}</div>
@@ -358,7 +358,7 @@ export function TodayScreen() {
             })}
           </p>
           {appMeta?.backupStrategy === 'share' && appMeta.shareDestinationName && (
-            <p className="text-sm font-medium text-primary-800">
+            <p className="text-sm font-medium text-primary-deep">
               I-save sa {appMeta.shareDestinationName}
             </p>
           )}

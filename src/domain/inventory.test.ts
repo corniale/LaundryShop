@@ -7,6 +7,8 @@ import {
   isLowStock,
   latestUnitCostCentavos,
   usageCostCentavos,
+  basisUnits,
+  expectedQty,
 } from './inventory'
 import type { InventoryMove } from '../data/types'
 
@@ -92,5 +94,29 @@ describe('costing what was used', () => {
     expect(usageCostCentavos(12.5, 13500)).toBe(168750)
     expect(usageCostCentavos(0.333, 10000)).toBe(3330)
     expect(usageCostCentavos(12.5, null)).toBeNull()
+  })
+})
+
+describe('expected use by basis', () => {
+  const orders = [
+    { kilos: 5, itemCount: 12 },
+    { kilos: 3.5, itemCount: 4 },
+    { kilos: 2 }, // piece count never entered
+  ]
+
+  it('counts kilos, pieces, or the order itself', () => {
+    expect(basisUnits(orders[0], 'kg')).toBe(5)
+    expect(basisUnits(orders[0], 'piece')).toBe(12)
+    expect(basisUnits(orders[0], 'order')).toBe(1)
+  })
+
+  it('contributes nothing for a piece rule when no piece count was entered', () => {
+    expect(basisUnits(orders[2], 'piece')).toBe(0)
+  })
+
+  it('sums a rule across orders', () => {
+    expect(expectedQty(orders, 'kg', 0.02)).toBeCloseTo(0.21) // 10.5 kg
+    expect(expectedQty(orders, 'piece', 0.5)).toBe(8) // 16 pieces
+    expect(expectedQty(orders, 'order', 1)).toBe(3) // one bag each
   })
 })

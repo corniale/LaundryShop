@@ -218,12 +218,12 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
             onChange={(e) => setDraft((d) => ({ ...d, walkInName: e.target.value }))}
           />
         ) : selectedCustomer ? (
-          <div className="flex items-center justify-between rounded-input border border-primary-300 bg-primary-100 px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-input border border-primary-deep bg-primary-soft px-3 py-2.5">
             <div>
               <div className="font-medium">{selectedCustomer.name}</div>
               <div className="text-xs text-ink-muted">{selectedCustomer.contact}</div>
             </div>
-            <button className="min-h-touch px-2 text-sm text-primary-600" onClick={() => setDraft((d) => ({ ...d, customerId: undefined }))}>
+            <button className="min-h-touch px-2 text-sm text-primary-deep" onClick={() => setDraft((d) => ({ ...d, customerId: undefined }))}>
               ✕
             </button>
           </div>
@@ -249,13 +249,13 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
                 <p className="px-3 py-2 text-sm text-ink-muted">{t('customers.noMatch')}</p>
               )}
               {!showNewCustomer && (
-                <button className="min-h-touch rounded-input px-3 py-2 text-left font-semibold text-primary-600" onClick={() => setShowNewCustomer(true)}>
+                <button className="min-h-touch rounded-input px-3 py-2 text-left font-semibold text-primary-deep" onClick={() => setShowNewCustomer(true)}>
                   {t('orders.newCustomer')}
                 </button>
               )}
             </div>
             {showNewCustomer && (
-              <div className="mt-2 flex flex-col gap-2 rounded-card bg-wash-deep p-3">
+              <div className="mt-2 flex flex-col gap-2 rounded-card bg-wash p-3">
                 <Input placeholder={t('customers.name')} value={newCust.name} onChange={(e) => setNewCust((n) => ({ ...n, name: e.target.value }))} />
                 <Input
                   placeholder={t('customers.contact')}
@@ -268,7 +268,7 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
                 />
                 <Input placeholder={t('customers.address')} value={newCust.address} onChange={(e) => setNewCust((n) => ({ ...n, address: e.target.value }))} />
                 {dupCustomer && (
-                  <div className="rounded-input bg-sun-500/15 p-3 text-sm text-sun-700">
+                  <div className="rounded-input bg-attention-soft p-3 text-sm text-attention-deep">
                     {t('customers.duplicate', { name: dupCustomer.name })}
                     <div className="mt-2 flex gap-2">
                       <Button
@@ -403,7 +403,7 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
       </section>
 
       {/* 6 · Live total */}
-      <div className="rounded-card bg-wash-deep p-4">
+      <div className="rounded-card bg-wash p-4">
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-ink-muted">{t('orders.subtotal')}</span>
           <span className="font-mono">{pricing ? formatCentavos(pricing.subtotalCentavos) : '—'}</span>

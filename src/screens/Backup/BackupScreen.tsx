@@ -130,7 +130,7 @@ export function BackupScreen() {
           <Button variant="secondary" className="w-full" onClick={() => fileRef.current?.click()}>
             {t('backupData.restore')}
           </Button>
-          {restoreError && <p className="mt-2 rounded-input bg-danger-500/10 p-3 text-sm text-danger-700">{restoreError}</p>}
+          {restoreError && <p className="mt-2 rounded-input bg-attention-soft p-3 text-sm text-attention-deep">{restoreError}</p>}
         </Card>
       )}
 
@@ -189,14 +189,14 @@ export function BackupScreen() {
               })}
             </p>
             {preview.migrationNotes.length > 0 && (
-              <ul className="rounded-input bg-primary-100 p-3 text-sm">
+              <ul className="rounded-input bg-primary-soft p-3 text-sm">
                 {preview.migrationNotes.map((n, i) => (
                   <li key={i}>{n}</li>
                 ))}
               </ul>
             )}
             <p className="text-xs text-ink-muted">{t('backupData.preRestoreNote')}</p>
-            <div className="rounded-card bg-wash-deep p-3">
+            <div className="rounded-card bg-wash p-3">
               <p className="mb-2 text-sm font-medium">{t('backupData.typeToConfirm', { word: 'RESTORE' })}</p>
               <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className="font-mono uppercase" />
             </div>
@@ -213,7 +213,7 @@ export function BackupScreen() {
       {/* Handover checklist */}
       <Sheet open={handoverOpen} onClose={() => setHandoverOpen(false)} title={t('backupData.handover')}>
         <div className="flex flex-col gap-3">
-          <pre className="whitespace-pre-wrap rounded-card bg-wash-deep p-4 font-body text-sm">
+          <pre className="whitespace-pre-wrap rounded-card bg-wash p-4 font-body text-sm">
             {t('backupData.handoverSteps', { count: orderCount })}
           </pre>
           <Button onClick={() => setHandoverOpen(false)}>{t('common.done')}</Button>

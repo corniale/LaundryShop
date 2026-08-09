@@ -129,7 +129,7 @@ export function OrdersTable({
         onClick={() => onSort(key, defaultDesc)}
         className={`min-h-touch w-full px-3 text-[0.6875rem] font-semibold uppercase tracking-wider ${
           right ? 'text-right' : 'text-left'
-        } ${sortKey === key ? 'text-primary-600' : 'text-ink-muted'}`}
+        } ${sortKey === key ? 'text-primary-deep' : 'text-ink-muted'}`}
       >
         {label}
         {arrow(key)}
@@ -145,7 +145,7 @@ export function OrdersTable({
       <div className="hidden overflow-x-auto rounded-card border border-line bg-surface md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line bg-wash-deep">
+            <tr className="border-b border-line bg-wash">
               {th('code', t('stub.orderCode'), false, false)}
               {th('customer', t('orders.customer'), false, false)}
               {th('service', t('orders.service'), false, false)}
@@ -183,12 +183,12 @@ export function OrdersTable({
                       {t(`pay.${pStatus}` as 'pay.unpaid')}
                     </span>
                   </td>
-                  <td className={`whitespace-nowrap px-3 py-2.5 text-xs ${overdue ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
+                  <td className={`whitespace-nowrap px-3 py-2.5 text-xs ${overdue ? 'font-semibold text-attention-deep' : 'text-ink-muted'}`}>
                     {fmtDate(order.promisedAt)}
                   </td>
                   <td className="px-3 py-2.5">
                     {order.voidedAt ? (
-                      <span className="text-xs font-bold text-danger-700">{t('orders.voidedBadge')}</span>
+                      <span className="text-xs font-bold text-attention-deep">{t('orders.voidedBadge')}</span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
                         <span style={{ color: STATUS_VAR[order.status] }}>
@@ -235,7 +235,7 @@ export function OrdersTable({
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
                 {order.voidedAt ? (
-                  <span className="text-xs font-bold text-danger-700">{t('orders.voidedBadge')}</span>
+                  <span className="text-xs font-bold text-attention-deep">{t('orders.voidedBadge')}</span>
                 ) : (
                   <span className="inline-flex items-center gap-2">
                     <span style={{ color: STATUS_VAR[order.status] }}>
@@ -247,7 +247,7 @@ export function OrdersTable({
                 {!order.voidedAt && <NextButton status={order.status} onAdvance={(to) => onAdvance(order, to)} />}
               </div>
               <div className="mt-1 truncate text-xs text-ink-muted">{order.serviceNameSnapshot}</div>
-              <div className={`text-xs ${overdue ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
+              <div className={`text-xs ${overdue ? 'font-semibold text-attention-deep' : 'text-ink-muted'}`}>
                 {order.kilos} {t('orders.kg')} · {t('orders.readyBy')}: {fmtDate(order.promisedAt)}
               </div>
             </div>

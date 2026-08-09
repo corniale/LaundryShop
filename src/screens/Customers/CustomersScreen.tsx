@@ -167,7 +167,7 @@ export function CustomersScreen() {
       <button
         onClick={() => setSort(key, defaultDesc)}
         className={`min-h-touch w-full px-3 text-[0.6875rem] font-semibold uppercase tracking-wider ${right ? 'text-right' : 'text-left'} ${
-          sortKey === key ? 'text-primary-600' : 'text-ink-muted'
+          sortKey === key ? 'text-primary-deep' : 'text-ink-muted'
         }`}
       >
         {label}
@@ -179,7 +179,7 @@ export function CustomersScreen() {
   // ── Detail panel (shared by both breakpoints) ──
   const detail = selected && (
     <div className="flex flex-col gap-3">
-      <button onClick={() => navigate('/customers')} className="min-h-touch self-start font-semibold text-primary-600">
+      <button onClick={() => navigate('/customers')} className="min-h-touch self-start font-semibold text-primary-deep">
         ← {t('common.back')}
       </button>
       <Card>
@@ -217,7 +217,7 @@ export function CustomersScreen() {
           </div>
           <div>
             <div className="text-xs text-ink-muted">{t('customers.balance')}</div>
-            <div className={`font-mono font-medium ${(derived.get(selected.id)?.balance ?? 0) > 0 ? 'text-danger-700' : 'text-accent-700'}`}>
+            <div className={`font-mono font-medium ${(derived.get(selected.id)?.balance ?? 0) > 0 ? 'text-attention-deep' : 'text-positive-deep'}`}>
               {formatCentavos(derived.get(selected.id)?.balance ?? 0)}
             </div>
           </div>
@@ -266,7 +266,7 @@ export function CustomersScreen() {
           <TextArea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
         </Field>
         {dup && (
-          <div className="rounded-input bg-sun-500/15 p-3 text-sm text-sun-700">
+          <div className="rounded-input bg-attention-soft p-3 text-sm text-attention-deep">
             {t('customers.duplicate', { name: dup.name })}
             <div className="mt-2 flex gap-2">
               <Button variant="secondary" className="!py-2 text-sm" onClick={() => { setFormOpen(false); navigate(`/customers/${dup.id}`) }}>
@@ -341,7 +341,7 @@ export function CustomersScreen() {
                     <div className="flex items-baseline justify-between">
                       <span className="font-semibold">{c.name}</span>
                       {(d?.balance ?? 0) > 0 && (
-                        <span className="font-mono text-sm font-medium text-danger-700">{formatCentavos(d!.balance)}</span>
+                        <span className="font-mono text-sm font-medium text-attention-deep">{formatCentavos(d!.balance)}</span>
                       )}
                     </div>
                     <div className="text-sm text-ink-muted">
@@ -367,7 +367,7 @@ export function CustomersScreen() {
               <div className="overflow-x-auto rounded-card border border-line bg-surface">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-line bg-wash-deep">
+                    <tr className="border-b border-line bg-wash">
                       {headerCell('name', t('customers.name'), false, false)}
                       {headerCell('contact', t('customers.contact'), false, false)}
                       {headerCell('orders', t('tab.orders'), true)}
@@ -389,7 +389,7 @@ export function CustomersScreen() {
                           <td className="px-3 py-2.5 text-ink-muted">{c.contact}</td>
                           <td className="px-3 py-2.5 text-right font-mono">{d?.orderCount ?? 0}</td>
                           <td className="px-3 py-2.5 text-right font-mono">{formatCentavos(d?.lifetime ?? 0)}</td>
-                          <td className={`px-3 py-2.5 text-right font-mono ${(d?.balance ?? 0) > 0 ? 'font-medium text-danger-700' : 'text-ink-muted'}`}>
+                          <td className={`px-3 py-2.5 text-right font-mono ${(d?.balance ?? 0) > 0 ? 'font-medium text-attention-deep' : 'text-ink-muted'}`}>
                             {formatCentavos(d?.balance ?? 0)}
                           </td>
                           <td className="px-3 py-2.5 text-right text-xs text-ink-muted">

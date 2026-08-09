@@ -7,11 +7,11 @@
  * Splitting them into two stacked lists of the same items made the reader
  * match up names by eye.
  */
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { format, startOfDay, endOfDay, subDays } from 'date-fns'
 import { db } from '../../data/db'
-import type { InventoryItem, InventoryUnit } from '../../data/types'
+import type { ExpectedUseRule, InventoryItem, InventoryUnit, Service, UseBasis } from '../../data/types'
 import { t } from '../../i18n/strings'
 import { formatCentavos, parsePesosInput } from '../../domain/money'
 import {
@@ -20,6 +20,7 @@ import {
   isLowStock,
   latestUnitCostCentavos,
   usageCostCentavos,
+  expectedQty,
 } from '../../domain/inventory'
 import {
   saveInventoryItem,
@@ -34,8 +35,162 @@ import { Card, Button, Sheet, Field, Input, Select, Chip } from '../../component
 import { DataTable, type Column } from '../../components/DataTable'
 import { fmtDateTime, todayRange, weekRange, monthRange, inRange } from '../../app/format'
 
-const UNITS: InventoryUnit[] = ['kg', 'L', 'pc', 'pack']
+const UNITS: InventoryUnit[] = ['kg', 'g', 'L', 'mL', 'pc', 'pack']
+const BASES: UseBasis[] = ['kg', 'piece', 'order']
 type Preset = 'today' | 'week' | 'month' | 'custom'
+
+// Native spinners crowd a cell this small, and the keyboard still steps the value.
+const CELL =
+  'h-9 w-20 rounded-input border border-line bg-surface px-2 text-right font-mono text-sm text-ink ' +
+  '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+
+/**
+ * Expected use, as a grid: every service is a row, every item a column, and
+ * a cell is how much of that item the service uses per unit of its basis.
+ * A form that asked for one service, one item and one number at a time made
+ * the reader hold the whole matrix in their head; here it is on the page.
+ *
+ * The basis belongs to the service — a service sold by the kilo consumes by
+ * the kilo — so it is one control per row rather than one per cell, which
+ * would put a dropdown in every square.
+ */
+function RulesMatrix({
+  services,
+  items,
+  rules,
+  onSave,
+  onDelete,
+}: {
+  services: Service[]
+  items: InventoryItem[]
+  rules: ExpectedUseRule[]
+  onSave: (rule: { id?: string; serviceId: string; itemId: string; qtyPer: number; basis: UseBasis }) => void
+  onDelete: (id: string) => void
+}) {
+  const [basisDraft, setBasisDraft] = useState<Record<string, UseBasis>>({})
+  const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({})
+
+  const cellKey = (serviceId: string, itemId: string) => `${serviceId}:${itemId}`
+  const ruleAt = (serviceId: string, itemId: string) =>
+    rules.find((r) => r.serviceId === serviceId && r.itemId === itemId)
+  const basisOf = (serviceId: string): UseBasis =>
+    basisDraft[serviceId] ?? rules.find((r) => r.serviceId === serviceId)?.basis ?? 'kg'
+  const shownQty = (serviceId: string, itemId: string) => {
+    const draft = qtyDraft[cellKey(serviceId, itemId)]
+    if (draft !== undefined) return draft
+    const rule = ruleAt(serviceId, itemId)
+    return rule ? String(rule.qtyPer) : ''
+  }
+
+  /** Blank or zero means "no rule", so the row is removed rather than stored as 0. */
+  function commit(serviceId: string, itemId: string) {
+    const key = cellKey(serviceId, itemId)
+    const raw = qtyDraft[key]
+    setQtyDraft((d) => {
+      const next = { ...d }
+      delete next[key]
+      return next
+    })
+    if (raw === undefined) return
+    const existing = ruleAt(serviceId, itemId)
+    const qty = Number(raw)
+    if (raw.trim() === '' || !Number.isFinite(qty) || qty <= 0) {
+      if (existing) onDelete(existing.id)
+      return
+    }
+    onSave({ id: existing?.id, serviceId, itemId, qtyPer: qty, basis: basisOf(serviceId) })
+  }
+
+  function changeBasis(serviceId: string, basis: UseBasis) {
+    setBasisDraft((d) => ({ ...d, [serviceId]: basis }))
+    for (const r of rules.filter((x) => x.serviceId === serviceId)) {
+      onSave({ id: r.id, serviceId, itemId: r.itemId, qtyPer: r.qtyPer, basis })
+    }
+  }
+
+  const basisSelect = (service: Service, className: string) => (
+    <Select
+      className={className}
+      aria-label={`${t('inventory.basis')} — ${service.name}`}
+      value={basisOf(service.id)}
+      onChange={(e) => changeBasis(service.id, e.target.value as UseBasis)}
+    >
+      {BASES.map((b) => (
+        <option key={b} value={b}>
+          {t(`inventory.basis.${b}` as 'inventory.basis.kg')}
+        </option>
+      ))}
+    </Select>
+  )
+
+  const qtyInput = (service: Service, item: InventoryItem, className: string) => (
+    <input
+      inputMode="decimal"
+      type="number"
+      min="0"
+      step="0.001"
+      placeholder="—"
+      aria-label={`${service.name} — ${item.name}`}
+      className={className}
+      value={shownQty(service.id, item.id)}
+      onChange={(e) => setQtyDraft((d) => ({ ...d, [cellKey(service.id, item.id)]: e.target.value }))}
+      onBlur={() => commit(service.id, item.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+      }}
+    />
+  )
+
+  const columns: Array<Column<Service>> = [
+    {
+      key: 'service',
+      header: t('inventory.service'),
+      sortValue: (s) => s.name.toLowerCase(),
+      defaultDesc: false,
+      render: (s) => <span className="whitespace-nowrap font-medium">{s.name}</span>,
+    },
+    {
+      key: 'basis',
+      header: t('inventory.basis'),
+      render: (s) => basisSelect(s, '!min-h-0 h-9 !w-auto !py-0 !text-sm'),
+    },
+    ...items.map(
+      (item): Column<Service> => ({
+        key: item.id,
+        header: `${item.name} (${item.unit})`,
+        align: 'right',
+        render: (s) => qtyInput(s, item, CELL),
+      }),
+    ),
+  ]
+
+  return (
+    <DataTable
+      rows={services}
+      columns={columns}
+      getRowKey={(s) => s.id}
+      emptyText={t('inventory.rulesEmpty')}
+      renderCard={(s) => (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium">{s.name}</span>
+            {basisSelect(s, '!min-h-0 h-9 !w-auto !py-0 !text-sm')}
+          </div>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {items.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate text-sm text-ink-muted">
+                  {item.name} <span className="text-xs">({item.unit})</span>
+                </span>
+                {qtyInput(s, item, CELL)}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    />
+  )
+}
 
 interface UsageRow {
   item: InventoryItem
@@ -51,7 +206,8 @@ interface UsageRow {
 export function InventoryScreen() {
   const toast = useToast()
   const { currentUser, isOwner } = useAuth()
-  const items = useLiveQuery(() => db.inventoryItems.filter((i) => i.active).toArray(), []) ?? []
+  // Sorted by name so the rules grid's columns keep a stable order.
+  const items = useLiveQuery(() => db.inventoryItems.filter((i) => i.active).sortBy('name'), []) ?? []
   const moves = useLiveQuery(() => db.inventoryMoves.toArray(), []) ?? []
   const orders = useLiveQuery(() => db.orders.toArray(), []) ?? []
   const services = useLiveQuery(() => db.services.toArray(), []) ?? []
@@ -66,10 +222,13 @@ export function InventoryScreen() {
   const [itemFormOpen, setItemFormOpen] = useState(false)
   const [editItem, setEditItem] = useState<InventoryItem | null>(null)
   const [itemForm, setItemForm] = useState({ name: '', unit: 'kg' as InventoryUnit, reorder: '', qty: '0' })
-  const [ruleOpen, setRuleOpen] = useState(false)
-  const [ruleForm, setRuleForm] = useState({ serviceId: '', itemId: '', qtyPerKg: '' })
+  const rulesRef = useRef<HTMLDivElement>(null)
 
   const detailLive = items.find((i) => i.id === detail?.id) ?? detail
+  const servicesInOrder = useMemo(
+    () => [...services].filter((s) => s.active).sort((a, b) => a.sortOrder - b.sortOrder),
+    [services],
+  )
 
   const range = useMemo(() => {
     if (preset === 'today') return todayRange()
@@ -109,10 +268,10 @@ export function InventoryScreen() {
       if (itemRules.length > 0) {
         expected = 0
         for (const rule of itemRules) {
-          const kilos = orders
-            .filter((o) => !o.voidedAt && o.serviceId === rule.serviceId && inRange(o.receivedAt, from, to))
-            .reduce((s, o) => s + o.kilos, 0)
-          expected += kilos * rule.qtyPerKg
+          const forService = orders.filter(
+            (o) => !o.voidedAt && o.serviceId === rule.serviceId && inRange(o.receivedAt, from, to),
+          )
+          expected += expectedQty(forService, rule.basis ?? 'kg', rule.qtyPer)
         }
       }
       // One bucket of expected quantity already summed, so the per-kilo rate is it.
@@ -168,9 +327,8 @@ export function InventoryScreen() {
     setItemFormOpen(false)
   }
 
-  function openRulesFor(itemId: string) {
-    setRuleForm({ serviceId: '', itemId, qtyPerKg: '' })
-    setRuleOpen(true)
+  function showRules() {
+    rulesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const stockColumns: Array<Column<UsageRow>> = [
@@ -194,11 +352,11 @@ export function InventoryScreen() {
         return (
           <span className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
             {low && (
-              <span className="rounded-pill bg-danger-500/10 px-2 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-danger-700">
+              <span className="rounded-pill bg-attention-soft px-2 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-attention-deep">
                 {t('inventory.lowStock')}
               </span>
             )}
-            <span className={`font-mono font-medium ${low ? 'text-danger-700' : ''}`}>
+            <span className={`font-mono font-medium ${low ? 'text-attention-deep' : ''}`}>
               {r.item.currentQty} {r.item.unit}
             </span>
           </span>
@@ -238,10 +396,10 @@ export function InventoryScreen() {
       render: (r) =>
         r.expected === null ? (
           <button
-            className="text-xs text-primary-600 underline underline-offset-2"
+            className="text-xs text-primary-deep underline underline-offset-2"
             onClick={(e) => {
               e.stopPropagation()
-              openRulesFor(r.item.id)
+              showRules()
             }}
           >
             {t('inventory.noRule')}
@@ -262,7 +420,7 @@ export function InventoryScreen() {
           <span className="text-xs text-ink-muted">—</span>
         ) : (
           <span
-            className={`whitespace-nowrap font-mono ${r.flagged ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}
+            className={`whitespace-nowrap font-mono ${r.flagged ? 'font-semibold text-attention-deep' : 'text-ink-muted'}`}
             title={r.flagged ? t('inventory.varianceFlag') : undefined}
           >
             {r.variancePct >= 0 ? '+' : ''}
@@ -350,19 +508,19 @@ export function InventoryScreen() {
             <>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-medium">{r.item.name}</span>
-                <span className={`whitespace-nowrap font-mono font-medium ${low ? 'text-danger-700' : ''}`}>
+                <span className={`whitespace-nowrap font-mono font-medium ${low ? 'text-attention-deep' : ''}`}>
                   {r.item.currentQty} {r.item.unit}
                   {low && (
-                    <span className="ml-2 rounded-pill bg-danger-500/10 px-2 py-0.5 text-xs font-semibold text-danger-700">
+                    <span className="ml-2 rounded-pill bg-attention-soft px-2 py-0.5 text-xs font-semibold text-attention-deep">
                       {t('inventory.lowStock')}
                     </span>
                   )}
                 </span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-pill bg-wash-deep">
+              <div className="mt-2 h-2 overflow-hidden rounded-pill bg-wash">
                 <div
                   className="h-full rounded-pill"
-                  style={{ width: `${pct}%`, backgroundColor: low ? 'var(--danger-500)' : 'var(--accent-500)' }}
+                  style={{ width: `${pct}%`, backgroundColor: low ? 'var(--attention)' : 'var(--positive)' }}
                 />
               </div>
               <div className="mt-1 text-xs text-ink-muted">
@@ -373,7 +531,7 @@ export function InventoryScreen() {
                     {t('inventory.used')} {r.used.toFixed(1)} {r.item.unit}
                     {r.costOfUseCentavos !== null ? ` · ${formatCentavos(r.costOfUseCentavos)}` : ''}
                     {r.flagged && r.variancePct !== null ? (
-                      <span className="font-semibold text-sun-700">
+                      <span className="font-semibold text-attention-deep">
                         {' · '}
                         {r.variancePct >= 0 ? '+' : ''}
                         {r.variancePct.toFixed(0)}%
@@ -389,15 +547,26 @@ export function InventoryScreen() {
 
       {isOwner && items.length > 0 && (
         <Card>
-          <div className="mb-1 flex items-center justify-between gap-2">
-            <h2 className="font-display text-base font-semibold">{t('inventory.usageReport')}</h2>
-            <Button variant="ghost" className="!py-1.5 text-sm" onClick={() => setRuleOpen(true)}>
-              {t('inventory.rules')}
-            </Button>
-          </div>
+          <h2 className="mb-1 font-display text-base font-semibold">{t('inventory.usageReport')}</h2>
           <p className="text-xs text-ink-muted">{t('inventory.usageIntro')}</p>
           <p className="mt-1 text-xs text-ink-muted">{t('inventory.costBasis')}</p>
         </Card>
+      )}
+
+      {isOwner && (
+        <div ref={rulesRef} className="flex flex-col gap-2 pt-1">
+          <h2 className="font-display text-base font-semibold">{t('inventory.rules')}</h2>
+          <p className="text-xs text-ink-muted">
+            {t('inventory.rulesHelp')} {t('inventory.rulesPieceNote')}
+          </p>
+          <RulesMatrix
+            services={servicesInOrder}
+            items={items}
+            rules={rules}
+            onSave={(r) => currentUser && void saveExpectedUseRule(r, currentUser.id)}
+            onDelete={(id) => currentUser && void deleteExpectedUseRule(id, currentUser.id)}
+          />
+        </div>
       )}
 
       {/* Item detail sheet */}
@@ -448,7 +617,7 @@ export function InventoryScreen() {
                     <span>
                       <span
                         className={`mr-2 font-mono font-medium ${
-                          m.type === 'in' ? 'text-accent-700' : m.type === 'out' ? 'text-danger-700' : 'text-sun-700'
+                          m.type === 'in' ? 'text-positive-deep' : m.type === 'out' ? 'text-attention-deep' : 'text-attention-deep'
                         }`}
                       >
                         {m.type === 'in' ? '+' : m.type === 'out' ? '−' : '±'}
@@ -537,88 +706,6 @@ export function InventoryScreen() {
         </div>
       </Sheet>
 
-      {/* Expected-use rules sheet */}
-      <Sheet open={ruleOpen} onClose={() => setRuleOpen(false)} title={t('inventory.rules')}>
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-ink-muted">{t('inventory.expectedNote')}</p>
-
-          <div>
-            <div className="label-caps mb-1">{t('inventory.ruleExisting')}</div>
-            {rules.length === 0 ? (
-              <p className="text-sm text-ink-muted">{t('inventory.ruleNone')}</p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {rules.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between gap-2 border-b border-line py-1.5 last:border-0">
-                    <span className="min-w-0 text-sm">
-                      {services.find((s) => s.id === r.serviceId)?.name} → {items.find((i) => i.id === r.itemId)?.name}
-                      <span className="ml-2 font-mono">{r.qtyPerKg}/kg</span>
-                    </span>
-                    <button
-                      className="min-h-touch min-w-touch shrink-0 text-danger-700"
-                      aria-label={t('common.delete')}
-                      onClick={() => currentUser && void deleteExpectedUseRule(r.id, currentUser.id)}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-card bg-wash-deep p-3">
-            <div className="label-caps">{t('inventory.ruleAdd')}</div>
-            <Field label={t('orders.service')}>
-              <Select value={ruleForm.serviceId} onChange={(e) => setRuleForm((f) => ({ ...f, serviceId: e.target.value }))}>
-                <option value="">—</option>
-                {services
-                  .filter((s) => s.active)
-                  .map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-              </Select>
-            </Field>
-            <Field label={t('inventory.item')}>
-              <Select value={ruleForm.itemId} onChange={(e) => setRuleForm((f) => ({ ...f, itemId: e.target.value }))}>
-                <option value="">—</option>
-                {items.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label={t('inventory.qtyPerKg')}>
-              <Input
-                inputMode="decimal"
-                type="number"
-                min="0"
-                step="0.001"
-                className="font-mono"
-                value={ruleForm.qtyPerKg}
-                onChange={(e) => setRuleForm((f) => ({ ...f, qtyPerKg: e.target.value }))}
-              />
-            </Field>
-            <Button
-              variant="secondary"
-              disabled={!ruleForm.serviceId || !ruleForm.itemId || !ruleForm.qtyPerKg}
-              onClick={async () => {
-                if (!currentUser) return
-                await saveExpectedUseRule(
-                  { serviceId: ruleForm.serviceId, itemId: ruleForm.itemId, qtyPerKg: Number(ruleForm.qtyPerKg) },
-                  currentUser.id,
-                )
-                setRuleForm((f) => ({ serviceId: '', itemId: f.itemId, qtyPerKg: '' }))
-              }}
-            >
-              {t('common.add')}
-            </Button>
-          </div>
-        </div>
-      </Sheet>
     </div>
   )
 }

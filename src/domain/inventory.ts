@@ -3,7 +3,7 @@
  * ExpectedUseRule is REPORTING ONLY and never touches quantities.
  * Pure, no React, no Dexie.
  */
-import type { InventoryMove, InventoryMoveType } from '../data/types'
+import type { InventoryMove, InventoryMoveType, UseBasis } from '../data/types'
 
 /** Signed effect of a move on stock. */
 export function moveDelta(type: InventoryMoveType, qty: number): number {
@@ -57,6 +57,31 @@ export function latestUnitCostCentavos(moves: InventoryMove[]): number | null {
 export function usageCostCentavos(usedQty: number, unitCostCentavos: number | null): number | null {
   if (unitCostCentavos === null) return null
   return Math.round(usedQty * unitCostCentavos)
+}
+
+/**
+ * How much of the basis one order carries. A piece rule can only count
+ * orders where someone entered a piece count; one with none contributes
+ * nothing rather than guessing a number.
+ */
+export function basisUnits(order: { kilos: number; itemCount?: number }, basis: UseBasis): number {
+  switch (basis) {
+    case 'kg':
+      return order.kilos
+    case 'piece':
+      return order.itemCount ?? 0
+    case 'order':
+      return 1
+  }
+}
+
+/** Expected consumption for one rule across a set of orders. Reporting only. */
+export function expectedQty(
+  orders: Array<{ kilos: number; itemCount?: number }>,
+  basis: UseBasis,
+  qtyPer: number,
+): number {
+  return orders.reduce((sum, o) => sum + basisUnits(o, basis) * qtyPer, 0)
 }
 
 export interface UsageComparison {

@@ -74,7 +74,7 @@ export function UsersScreen() {
             <div className="flex items-center justify-between gap-2">
               <div>
                 <span className="font-semibold">{u.name}</span>{' '}
-                <span className="rounded-pill bg-wash-deep px-2 py-0.5 text-xs font-medium text-ink-muted">
+                <span className="rounded-pill bg-wash px-2 py-0.5 text-xs font-medium text-ink-muted">
                   {t(`users.role.${u.role}` as 'users.role.owner')}
                 </span>
                 {u.lastLoginAt && <div className="text-xs text-ink-muted">Last: {fmtDateTime(u.lastLoginAt)}</div>}

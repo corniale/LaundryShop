@@ -79,7 +79,7 @@ export function DataTable<T>({
       <div className="hidden overflow-x-auto rounded-card border border-line bg-surface md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line bg-wash-deep">
+            <tr className="border-b border-line bg-wash">
               {columns.map((col) => {
                 const active = sortKey === col.key
                 const right = col.align === 'right'
@@ -90,7 +90,7 @@ export function DataTable<T>({
                         onClick={() => toggle(col)}
                         className={`min-h-touch w-full px-3 text-[0.6875rem] font-semibold uppercase tracking-wider ${
                           right ? 'text-right' : 'text-left'
-                        } ${active ? 'text-primary-600' : 'text-ink-muted'}`}
+                        } ${active ? 'text-primary-deep' : 'text-ink-muted'}`}
                       >
                         {col.header}
                         {active ? (sortDesc ? ' ↓' : ' ↑') : ''}

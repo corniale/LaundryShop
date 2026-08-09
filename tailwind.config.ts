@@ -1,43 +1,37 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * All color values live in src/styles/tokens.css as CSS custom properties.
- * Components reference them through these Tailwind aliases only —
- * no raw hex values may appear in any component.
+ * All colour values live in src/styles/themes.css as CSS custom properties.
+ * Components reference them through these Tailwind aliases only — no literal
+ * colour may appear in any component (spec.md § Theming, rule 1).
  */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        ink: 'var(--ink)',
-        'ink-muted': 'var(--ink-muted)',
+        // Thin aliases onto the token contract in src/styles/themes.css.
+        // The neutral keys keep their editorial names; every semantic key
+        // is named exactly as the contract names it.
+        ink: 'var(--text)',
+        'ink-muted': 'var(--text-muted)',
+        'ink-disabled': 'var(--text-disabled)',
         line: 'var(--line)',
         surface: 'var(--surface)',
-        wash: 'var(--wash)',
-        'wash-deep': 'var(--wash-deep)',
-        primary: {
-          100: 'var(--primary-100)',
-          300: 'var(--primary-300)',
-          500: 'var(--primary-500)',
-          600: 'var(--primary-600)',
-          800: 'var(--primary-800)',
-        },
-        accent: {
-          400: 'var(--accent-400)',
-          500: 'var(--accent-500)',
-          700: 'var(--accent-700)',
-        },
-        sun: {
-          500: 'var(--sun-500)',
-          700: 'var(--sun-700)',
-        },
-        danger: {
-          500: 'var(--danger-500)',
-          700: 'var(--danger-700)',
-        },
+        wash: 'var(--bg)',
+        primary: 'var(--primary)',
+        'primary-deep': 'var(--primary-deep)',
+        'primary-soft': 'var(--primary-soft)',
         'on-primary': 'var(--on-primary)',
+        positive: 'var(--positive)',
+        'positive-deep': 'var(--positive-deep)',
+        'positive-soft': 'var(--positive-soft)',
+        attention: 'var(--attention)',
+        'attention-deep': 'var(--attention-deep)',
+        'attention-soft': 'var(--attention-soft)',
         scrim: 'var(--scrim)',
+        paper: 'var(--paper)',
+        'paper-ink': 'var(--paper-ink)',
       },
       fontFamily: {
         display: ['Syne', 'system-ui', 'sans-serif'],

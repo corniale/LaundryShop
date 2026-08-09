@@ -1,4 +1,4 @@
-@import './tokens.css';
+@import './themes.css';
 
 @tailwind base;
 @tailwind components;
@@ -62,7 +62,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-muted);
+  color: var(--text-muted);
 }
 
 .font-mono {
@@ -84,7 +84,7 @@ textarea:focus-visible,
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--primary-600);
+  outline: 2px solid var(--primary-deep);
   outline-offset: 2px;
 }
 

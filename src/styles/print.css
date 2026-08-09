@@ -1,4 +1,6 @@
-/* Claim stub print stylesheet — 58mm thermal and A4 */
+/* Claim stub print stylesheet — 58mm thermal and A4.
+   Ink comes from --paper-ink: fixed in both themes, but still declared in
+   themes.css so no literal colour lives outside it. */
 @media print {
   @page {
     margin: 4mm;
@@ -6,7 +8,7 @@
 
   .stub {
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
-    color: #000;
+    color: var(--paper-ink);
     width: 100%;
     max-width: 58mm;
     font-size: 11px;
@@ -21,7 +23,7 @@
 
   .stub hr {
     border: none;
-    border-top: 1px dashed #000;
+    border-top: 1px dashed var(--paper-ink);
     margin: 4px 0;
   }
 

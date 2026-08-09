@@ -42,7 +42,7 @@ export function WashLine({
             <div
               key={s}
               className={`washline-seg h-2.5 flex-1 rounded-pill ${!filled && !isNext ? 'bg-line' : ''}`}
-              style={filled ? { backgroundColor: SEG_VAR[s] } : isNext ? { backgroundColor: 'var(--wash-deep)', border: '1.5px dashed var(--primary-500)' } : undefined}
+              style={filled ? { backgroundColor: SEG_VAR[s] } : isNext ? { backgroundColor: 'var(--bg)', border: '1.5px dashed var(--primary)' } : undefined}
             />
           )
           return seg
@@ -60,7 +60,7 @@ export function WashLine({
                     e.stopPropagation()
                     onAdvance(s)
                   }}
-                  className="min-h-touch flex-1 rounded-input text-center text-xs font-semibold text-primary-600"
+                  className="min-h-touch flex-1 rounded-input text-center text-xs font-semibold text-primary-deep"
                 >
                   {statusLabel(s)} →
                 </button>
@@ -137,7 +137,7 @@ export function ShopRail({
                   n > 0 ? `color-mix(in srgb, ${SEG_VAR[s]} 14%, transparent)` : 'transparent',
                 borderColor:
                   n > 0 ? `color-mix(in srgb, ${SEG_VAR[s]} 45%, transparent)` : 'var(--line)',
-                color: n > 0 ? undefined : 'var(--ink-muted)',
+                color: n > 0 ? undefined : 'var(--text-muted)',
               }}
             >
               {n}
