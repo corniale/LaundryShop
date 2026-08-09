@@ -43,6 +43,23 @@ export function buildReversal(
   }
 }
 
+/**
+ * When money last actually moved in for this order — what a partial payment
+ * should show so the day's collections can be matched against the till.
+ * Reversals, and the entries they cancel, are excluded: a reversed payment
+ * left no cash behind, so dating the order by it would be a lie.
+ * Returns null when nothing has been collected yet.
+ */
+export function lastPaymentAt(payments: Payment[]): string | null {
+  let latest: string | null = null
+  for (const p of payments) {
+    if (p.reversalOfPaymentId || p.reversedByPaymentId) continue
+    if (p.amountCentavos <= 0) continue
+    if (latest === null || new Date(p.receivedAt) > new Date(latest)) latest = p.receivedAt
+  }
+  return latest
+}
+
 export type AgingBucket = '0-7' | '8-30' | '31+'
 
 export function agingBucket(receivedAt: string, now: Date): AgingBucket {
