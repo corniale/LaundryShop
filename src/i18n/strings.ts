@@ -123,6 +123,26 @@ const strings = {
   'orders.reprint': { tl: 'I-print ulit ang stub', en: 'Reprint stub' },
   'orders.edit': { tl: 'I-edit', en: 'Edit' },
   'orders.moveBack': { tl: 'Ibalik sa nakaraang stage', en: 'Move back a stage' },
+
+  // ── Status rail ──
+  'rail.group': { tl: 'Status ng order', en: 'Order status' },
+  'rail.advanceTo': { tl: 'Ilipat sa {status}', en: 'Advance to {status}' },
+  'rail.currently': { tl: 'Nasa {status} ngayon', en: 'Currently {status}' },
+  'rail.moveBackTo': { tl: 'Ibalik sa {status}', en: 'Move back to {status}' },
+  'rail.skipTitle': { tl: 'Lumaktaw sa {status}?', en: 'Skip to {status}?' },
+  'rail.skipBody': {
+    tl: 'Mamarkahan ding tapos ang {skipped}.',
+    en: '{skipped} will be marked done too.',
+  },
+  'rail.skipConfirm': { tl: 'Laktawan', en: 'Skip' },
+  'rail.backTitle': { tl: 'Ibalik sa {status}?', en: 'Move back to {status}?' },
+  'rail.backBody': {
+    tl: 'Nasa {current} ang order na ito ngayon.',
+    en: 'This order is currently {current}.',
+  },
+  'rail.backConfirm': { tl: 'Ibalik', en: 'Move back' },
+  'rail.unlock': { tl: 'Baguhin ang status', en: 'Change status' },
+  'rail.saveFailed': { tl: 'Hindi na-save. Subukan ulit.', en: 'Not saved. Try again.' },
   'orders.moveBackReason': { tl: 'Dahilan ng pagbalik', en: 'Reason for moving back' },
   'orders.balance': { tl: 'Balanse', en: 'Balance' },
   'orders.paid': { tl: 'Nabayaran', en: 'Paid' },

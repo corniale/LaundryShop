@@ -10,7 +10,8 @@ import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
 import { paymentStatus } from '../../domain/payments'
 import { statusIndex, nextStatus } from '../../domain/status'
-import { StageDots, statusLabel } from '../../components/WashLine'
+import { statusLabel } from '../../components/WashLine'
+import { StatusBadge } from '../../components/StatusRail'
 import { fmtDate } from '../../app/format'
 import { payToneClass } from './OrdersScreen'
 
@@ -157,7 +158,12 @@ export function OrdersTable({
                     {order.voidedAt ? (
                       <span className="text-xs font-bold text-danger-700">{t('orders.voidedBadge')}</span>
                     ) : (
-                      <StageDots status={order.status} />
+                      <span className="inline-flex items-center gap-2">
+                        <StatusBadge status={order.status} />
+                        <span className="whitespace-nowrap text-xs text-ink-muted">
+                          {statusLabel(order.status)}
+                        </span>
+                      </span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -197,7 +203,10 @@ export function OrdersTable({
                 {order.voidedAt ? (
                   <span className="text-xs font-bold text-danger-700">{t('orders.voidedBadge')}</span>
                 ) : (
-                  <StageDots status={order.status} />
+                  <span className="inline-flex items-center gap-2">
+                    <StatusBadge status={order.status} />
+                    <span className="text-xs text-ink-muted">{statusLabel(order.status)}</span>
+                  </span>
                 )}
                 {!order.voidedAt && <NextButton status={order.status} onAdvance={(to) => onAdvance(order, to)} />}
               </div>
