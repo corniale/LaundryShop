@@ -420,6 +420,7 @@ const strings = {
       other: '5 wrong attempts. Wait {n} seconds.',
     },
   },
+  'lock.notYou': { tl: 'Hindi ikaw?', en: 'Not you?' },
   'lock.forgot': { tl: 'Nakalimutan ang PIN?', en: 'Forgot PIN?' },
   'lock.recovery': { tl: 'Ilagay ang recovery code', en: 'Enter recovery code' },
   'lock.recoveryWrong': { tl: 'Maling recovery code.', en: 'Wrong recovery code.' },

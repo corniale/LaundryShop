@@ -7,6 +7,7 @@ import { useAuth } from './AuthContext'
 import { t } from '../i18n/strings'
 import { hashPin, generateSalt, validPinFormat, verifyPin } from '../domain/pin'
 import { updateUser } from '../data/repository'
+import { Icon } from '../components/Icons'
 
 export function LockScreen() {
   const { unlock, unlockRecovered, cooldownUntil, attemptsLeft } = useAuth()
@@ -122,18 +123,44 @@ export function LockScreen() {
     )
   }
 
+  const canChange = users.length > 1
+
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-wash p-6 pb-safe">
-      {/* The shop's own mark and name — the first screen of every shift */}
+      {/*
+       * The shop's sign above its own door. Two states, one surface:
+       * before anyone is picked the screen has nothing else to do, so the
+       * mark is generous; once a PIN is being typed the keypad is the task
+       * and the mark steps back rather than competing with it. Both sizes
+       * transition, so this reads as one screen reflowing, not two screens.
+       */}
       <div className="flex flex-col items-center text-center">
-        {shop?.logoDataUrl && (
-          <img src={shop.logoDataUrl} alt="" className="mb-3 h-16 w-16 rounded-card object-cover" />
+        {shop?.logoDataUrl ? (
+          <img
+            src={shop.logoDataUrl}
+            alt=""
+            className={`rounded-card object-cover transition-all duration-200 ${
+              selected ? 'mb-2 h-14 w-14' : 'mb-4 h-28 w-28'
+            }`}
+          />
+        ) : (
+          <Icon
+            name="orders"
+            size={selected ? 32 : 72}
+            className="mb-3 text-primary transition-all duration-200"
+          />
         )}
-        <h1 className="font-display text-xl font-bold text-primary-deep">{shop?.name ?? ''}</h1>
+        <h1
+          className={`font-display font-bold text-primary-deep transition-all duration-200 ${
+            selected ? 'text-md' : 'text-xl'
+          }`}
+        >
+          {shop?.name ?? ''}
+        </h1>
         <p className="mt-1 text-ink-muted">{selected ? t('lock.title') : t('lock.who')}</p>
       </div>
 
-      {!selected || users.length > 1 ? (
+      {!selected ? (
         <div className="flex flex-wrap justify-center gap-2">
           {users.map((u) => (
             <button
@@ -143,17 +170,32 @@ export function LockScreen() {
                 setPin('')
                 setError(null)
               }}
-              className={`min-h-touch rounded-pill border px-5 py-2.5 font-medium ${
-                selected?.id === u.id
-                  ? 'border-primary-deep bg-primary-deep text-surface'
-                  : 'border-line bg-surface text-ink'
-              }`}
+              className="min-h-touch rounded-pill border border-line bg-surface px-5 py-2.5 font-medium text-ink"
             >
               {u.name}
             </button>
           ))}
         </div>
-      ) : null}
+      ) : (
+        /* One name, not the whole roster: who the PIN is for, and the way back */
+        <div className="flex items-center gap-2">
+          <span className="min-h-touch rounded-pill bg-primary-deep px-5 py-2.5 font-medium text-on-primary">
+            {selected.name}
+          </span>
+          {canChange && (
+            <button
+              className="min-h-touch rounded-pill px-3 text-sm font-semibold text-primary-deep"
+              onClick={() => {
+                setSelected(null)
+                setPin('')
+                setError(null)
+              }}
+            >
+              {t('lock.notYou')}
+            </button>
+          )}
+        </div>
+      )}
 
       {selected && (
         <>
@@ -196,14 +238,15 @@ export function LockScreen() {
             )}
           </div>
 
-          {pin.length >= 4 && !coolingDown && (
-            <button
-              className="min-h-touch w-full max-w-[280px] rounded-input bg-primary-deep py-3 font-semibold text-surface"
-              onClick={() => void submitPin(pin)}
-            >
-              {t('common.confirm')}
-            </button>
-          )}
+          {/* Always here, disabled until the PIN is long enough. Appearing on
+              the fourth digit shoved the keypad up mid-tap. */}
+          <button
+            disabled={pin.length < 4 || coolingDown}
+            className="min-h-touch w-full max-w-[280px] rounded-input bg-primary py-3 font-semibold text-on-primary transition-opacity duration-150 disabled:opacity-40"
+            onClick={() => void submitPin(pin)}
+          >
+            {t('common.confirm')}
+          </button>
         </>
       )}
 
