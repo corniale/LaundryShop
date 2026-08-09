@@ -234,6 +234,19 @@ const strings = {
   },
   'services.perKg': { tl: '/kg', en: '/kg' },
   'services.days': { tl: 'araw', en: 'days' },
+  'services.dayCount': { tl: { one: '{n} araw', other: '{n} araw' }, en: { one: '{n} day', other: '{n} days' } },
+  'services.displayOrder': { tl: 'Pagkakasunod', en: 'Display order' },
+  'services.moveUp': { tl: 'Iangat sa listahan', en: 'Move up the list' },
+  'services.moveDown': { tl: 'Ibaba sa listahan', en: 'Move down the list' },
+  'services.reorderHint': {
+    tl: 'Pumili ng Pagkakasunod para mailipat-lipat ang mga serbisyo.',
+    en: 'Sort by Display order to rearrange the services.',
+  },
+  'services.orderFormNote': {
+    tl: 'Ito ang pagkakasunod ng serbisyo sa bagong order.',
+    en: 'This is the order services appear in on a new order.',
+  },
+  'services.empty': { tl: 'Wala pang serbisyo.', en: 'No services yet.' },
 
   // ── Payments ───────────────────────────────────────────────────
   'payments.title': { tl: 'Bayad', en: 'Payments' },
@@ -315,6 +328,27 @@ const strings = {
   'inventory.rules': { tl: 'Expected use kada serbisyo', en: 'Expected use per service' },
   'inventory.qtyPerKg': { tl: 'Dami kada kilo', en: 'Qty per kg' },
   'inventory.empty': { tl: 'Wala pang item. Idagdag ang mga supplies mo.', en: 'No items yet. Add your supplies.' },
+  'inventory.item': { tl: 'Item', en: 'Item' },
+  'inventory.onHand': { tl: 'Natitira', en: 'On hand' },
+  'inventory.used': { tl: 'Nagamit', en: 'Used' },
+  'inventory.variance': { tl: 'Diperensya', en: 'Variance' },
+  'inventory.costOfUse': { tl: 'Halaga ng nagamit', en: 'Cost of use' },
+  'inventory.restocked': { tl: 'Naidagdag', en: 'Restocked' },
+  'inventory.spend': { tl: 'Gastos sa bili', en: 'Restock spend' },
+  'inventory.noRule': { tl: 'Magtakda', en: 'Set rule' },
+  'inventory.noPrice': { tl: 'Walang presyo', en: 'No price yet' },
+  'inventory.costBasis': {
+    tl: 'Ang halaga ng nagamit ay base sa huling presyo ng bili.',
+    en: 'Cost of use values what was consumed at the last price paid for it.',
+  },
+  'inventory.usageIntro': {
+    tl: 'Ang “Nagamit” ay galing lang sa mga Labas na naitala ng tao. Ang “Inaasahan” ay bilang lang — hindi ito gumagalaw ng stock.',
+    en: 'Used counts only the stock-outs someone recorded. Expected is a calculation from the kilos washed — it never moves stock on its own.',
+  },
+  'inventory.ruleFor': { tl: 'Panuntunan para sa {item}', en: 'Rule for {item}' },
+  'inventory.ruleExisting': { tl: 'Mga panuntunan ngayon', en: 'Current rules' },
+  'inventory.ruleNone': { tl: 'Wala pang panuntunan.', en: 'No rules yet.' },
+  'inventory.ruleAdd': { tl: 'Bagong panuntunan', en: 'New rule' },
 
   // ── Reports ────────────────────────────────────────────────────
   'reports.title': { tl: 'Reports', en: 'Reports' },

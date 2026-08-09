@@ -17,6 +17,8 @@ describe('pluralisation', () => {
     expect(t('today.lowStockCount', { n: 0 })).toBe('0 items')
     expect(t('today.lowStockCount', { n: 2 })).toBe('2 items')
     expect(t('customers.orderCount', { n: 12 })).toBe('12 orders')
+    expect(t('services.dayCount', { n: 1 })).toBe('1 day')
+    expect(t('services.dayCount', { n: 2 })).toBe('2 days')
     expect(t('backup.chip.daysAgo', { n: 3 })).toBe('! Last backup: 3 days ago')
   })
 

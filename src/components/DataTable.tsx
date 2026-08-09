@@ -8,13 +8,19 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { EmptyState } from './ui'
 
+/** The table's live sort, for columns whose controls only make sense under one ordering. */
+export interface SortContext {
+  sortKey?: string
+  sortDesc: boolean
+}
+
 export interface Column<T> {
   key: string
   header: string
   align?: 'left' | 'right'
   /** Omit to make the column unsortable (action columns). */
   sortValue?: (row: T) => string | number
-  render: (row: T) => ReactNode
+  render: (row: T, sort: SortContext) => ReactNode
   cellClass?: string
   /** First click on this header sorts descending. Default true. */
   defaultDesc?: boolean
@@ -63,6 +69,8 @@ export function DataTable<T>({
       setSortDesc(col.defaultDesc ?? true)
     }
   }
+
+  const sort: SortContext = { sortKey, sortDesc }
 
   if (rows.length === 0) return <EmptyState>{emptyText}</EmptyState>
 
@@ -113,7 +121,7 @@ export function DataTable<T>({
                     key={col.key}
                     className={`px-3 py-2.5 ${col.align === 'right' ? 'text-right' : ''} ${col.cellClass ?? ''}`}
                   >
-                    {col.render(row)}
+                    {col.render(row, sort)}
                   </td>
                 ))}
               </tr>
@@ -142,7 +150,7 @@ export function DataTable<T>({
                 <tr key={getRowKey(row)} className="border-b border-line last:border-0">
                   {columns.map((col) => (
                     <td key={col.key} className={`px-3 py-2.5 ${col.align === 'right' ? 'text-right' : ''}`}>
-                      {col.render(row)}
+                      {col.render(row, sort)}
                     </td>
                   ))}
                 </tr>

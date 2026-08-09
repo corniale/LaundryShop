@@ -38,6 +38,27 @@ export function isLowStock(currentQty: number, reorderPoint: number): boolean {
   return currentQty <= reorderPoint
 }
 
+/**
+ * The price the shop last paid for this item. Used to put a peso figure on
+ * what was consumed — a shop buys at whatever today's price is, so the most
+ * recent purchase is the honest basis. Null when nothing was ever bought
+ * with a recorded cost.
+ */
+export function latestUnitCostCentavos(moves: InventoryMove[]): number | null {
+  let latest: InventoryMove | null = null
+  for (const m of moves) {
+    if (m.type !== 'in' || m.unitCostCentavos === undefined) continue
+    if (latest === null || new Date(m.at) > new Date(latest.at)) latest = m
+  }
+  return latest?.unitCostCentavos ?? null
+}
+
+/** What the consumed stock was worth. Null when the item has no known price. */
+export function usageCostCentavos(usedQty: number, unitCostCentavos: number | null): number | null {
+  if (unitCostCentavos === null) return null
+  return Math.round(usedQty * unitCostCentavos)
+}
+
 export interface UsageComparison {
   expectedQty: number
   actualQty: number
