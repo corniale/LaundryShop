@@ -19,6 +19,7 @@ import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { statusLabel } from '../../components/WashLine'
 import { StageIcon } from '../../components/StatusRail'
+import { IconCheck } from '@tabler/icons-react'
 import { Chip, Input, Button, EmptyState, Sheet } from '../../components/ui'
 import { fmtDate } from '../../app/format'
 import { OrderIntake } from './OrderIntake'
@@ -310,7 +311,11 @@ export function OrdersScreen() {
                       <div
                         key={o.id}
                         onClick={() => navigate(`/orders/${o.id}`)}
-                        className="relative cursor-pointer rounded-card border border-line bg-surface py-2.5 pl-3 pr-14 transition-colors duration-150 hover:border-ink-muted/40"
+                        className={`relative cursor-pointer rounded-card border border-line bg-surface py-2.5 pl-3 transition-colors duration-150 hover:border-ink-muted/40 ${
+                          // The right gutter exists only to hold the advance
+                          // button; a terminal card reclaims that space.
+                          next ? 'pr-14' : 'pr-3'
+                        }`}
                         style={
                           overdue
                             ? { borderLeft: '3px solid var(--danger-500)', paddingLeft: 'calc(0.75rem - 2px)' }
@@ -323,6 +328,17 @@ export function OrdersScreen() {
                         </div>
                         <div className="truncate text-sm">{customerName(o)}</div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-ink-muted">
+                          {/* Inline, text-level completion mark — deliberately
+                              not a control, so it invites no tap. */}
+                          {!next && (
+                            <IconCheck
+                              size={13}
+                              stroke={2.25}
+                              className="shrink-0"
+                              style={{ color: 'var(--status-claimed)' }}
+                              aria-label={statusLabel(o.status)}
+                            />
+                          )}
                           <span>
                             {o.kilos} {t('orders.kg')}
                           </span>
