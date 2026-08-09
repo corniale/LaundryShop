@@ -45,7 +45,7 @@ function RecordButton({ onClick, labelled = false }: { onClick: (e: React.MouseE
           ? 'inline-flex min-h-touch items-center gap-1.5 whitespace-nowrap rounded-input border px-3 text-xs font-semibold transition-colors duration-150'
           : 'inline-flex h-9 w-9 items-center justify-center rounded-pill border transition-colors duration-150'
       }
-      style={{ borderColor: 'var(--sun-700)', color: 'var(--sun-700)' }}
+      style={{ borderColor: 'var(--attention-deep)', color: 'var(--attention-deep)' }}
     >
       <IconCurrencyPeso size={labelled ? 15 : 18} stroke={2} />
       {labelled ? t('payments.record') : null}
@@ -233,7 +233,7 @@ export function PaymentsScreen() {
       header: t('orders.balance'),
       align: 'right',
       sortValue: (r) => r.balance,
-      render: (r) => <span className="font-mono font-medium text-danger-700">{formatCentavos(r.balance)}</span>,
+      render: (r) => <span className="font-mono font-medium text-attention-deep">{formatCentavos(r.balance)}</span>,
     },
     {
       key: 'action',
@@ -278,7 +278,7 @@ export function PaymentsScreen() {
       align: 'right',
       sortValue: (p) => p.amountCentavos,
       render: (p) => (
-        <span className={`font-mono font-medium ${p.amountCentavos < 0 ? 'text-danger-700' : ''}`}>
+        <span className={`font-mono font-medium ${p.amountCentavos < 0 ? 'text-attention-deep' : ''}`}>
           {formatCentavos(p.amountCentavos)}
         </span>
       ),
@@ -307,7 +307,7 @@ export function PaymentsScreen() {
       header: t('payments.note'),
       render: (p) =>
         p.reversalOfPaymentId || p.reversedByPaymentId ? (
-          <span className="text-xs font-semibold text-danger-700">{t('payments.reversedBadge')}</span>
+          <span className="text-xs font-semibold text-attention-deep">{t('payments.reversedBadge')}</span>
         ) : (
           <span className="text-xs text-ink-muted">—</span>
         ),
@@ -332,13 +332,13 @@ export function PaymentsScreen() {
         <Stat
           label={t('payments.collectedToday')}
           value={formatCentavos(collectedToday)}
-          tone="accent"
+          tone="positive"
           onClick={() => setParams({ tab: 'all', range: 'today' })}
         />
         <Stat
           label={t('payments.outstanding')}
           value={formatCentavos(outstanding)}
-          tone={outstanding > 0 ? 'danger' : undefined}
+          tone={outstanding > 0 ? 'attention' : undefined}
           onClick={() => setParams({ tab: 'unpaid', sort: 'balance' })}
         />
         <Stat
@@ -359,11 +359,11 @@ export function PaymentsScreen() {
                 // An empty bucket has nothing to drill into, so it stops being a control.
                 disabled={aging[b] === 0}
                 onClick={() => setParams({ tab: 'unpaid', bucket: b })}
-                className={`rounded-input py-1 transition-colors duration-150 enabled:hover:bg-wash-deep disabled:cursor-default ${
-                  bucket === b ? 'bg-wash-deep' : ''
+                className={`rounded-input py-1 transition-colors duration-150 enabled:hover:bg-wash disabled:cursor-default ${
+                  bucket === b ? 'bg-wash' : ''
                 }`}
               >
-                <div className={`font-mono text-base font-medium ${b === '31+' && aging[b] > 0 ? 'text-danger-700' : ''}`}>
+                <div className={`font-mono text-base font-medium ${b === '31+' && aging[b] > 0 ? 'text-attention-deep' : ''}`}>
                   {formatCentavos(aging[b])}
                 </div>
                 <div className="text-xs text-ink-muted">{t(`payments.aging.${b}` as 'payments.aging.0-7')}</div>
@@ -384,7 +384,7 @@ export function PaymentsScreen() {
 
       {/* Which figure the table is currently explaining, and the way back */}
       {scopeLabel && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-wash-deep px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line bg-wash px-3 py-2">
           <div className="min-w-0 text-sm">
             <span className="label-caps">{t('payments.showing')}</span>{' '}
             <span className="font-medium">{scopeLabel}</span>
@@ -413,7 +413,7 @@ export function PaymentsScreen() {
             <>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-mono text-sm font-medium">{r.order.code}</span>
-                <span className="font-mono text-sm font-medium text-danger-700">
+                <span className="font-mono text-sm font-medium text-attention-deep">
                   {formatCentavos(r.balance)}
                 </span>
               </div>
@@ -452,7 +452,7 @@ export function PaymentsScreen() {
             <>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-mono text-sm font-medium">{ordersById.get(p.orderId)?.code}</span>
-                <span className={`font-mono text-sm font-medium ${p.amountCentavos < 0 ? 'text-danger-700' : ''}`}>
+                <span className={`font-mono text-sm font-medium ${p.amountCentavos < 0 ? 'text-attention-deep' : ''}`}>
                   {formatCentavos(p.amountCentavos)}
                 </span>
               </div>
@@ -490,7 +490,7 @@ export function PaymentsScreen() {
             <Input placeholder={t('payments.reference')} value={payReference} onChange={(e) => setPayReference(e.target.value)} />
           )}
           {confirmOverpay && payTarget && (
-            <p className="rounded-input bg-sun-500/15 p-3 text-sm text-sun-700">
+            <p className="rounded-input bg-attention-soft p-3 text-sm text-attention-deep">
               {t('payments.overpay', { balance: formatCentavos(payTarget.balance) })}
             </p>
           )}

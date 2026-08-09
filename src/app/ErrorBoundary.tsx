@@ -20,13 +20,13 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError
         <h1 className="font-display text-xl font-bold text-ink">{t('common.crash.title')}</h1>
         <p className="max-w-sm text-ink-muted">{t('common.crash.body')}</p>
         <button
-          className="min-h-touch rounded-input bg-primary-600 px-6 py-3 font-semibold text-surface"
+          className="min-h-touch rounded-input bg-primary-deep px-6 py-3 font-semibold text-surface"
           onClick={() => void emergencyDownload()}
         >
           {t('common.crash.download')}
         </button>
         <button
-          className="min-h-touch rounded-input px-6 py-3 font-semibold text-primary-600"
+          className="min-h-touch rounded-input px-6 py-3 font-semibold text-primary-deep"
           onClick={() => window.location.reload()}
         >
           {t('common.crash.reload')}

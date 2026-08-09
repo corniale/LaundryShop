@@ -1,0 +1,91 @@
+/*
+ * themes.css — the ONE file in the app allowed to contain a literal colour.
+ * Every other file reaches colour through the tokens defined here, via the
+ * Tailwind aliases in tailwind.config.ts. See spec.md § "Theming and design
+ * tokens"; src/styles/themes.test.ts fails the build if a hex escapes.
+ *
+ * Adding a token means adding it to EVERY theme in the same commit.
+ * Adding a theme means working the § 8 checklist before it ships.
+ */
+
+:root,
+[data-theme='coldwash'] {
+  --bg: #f5f9fa;
+  --surface: #ffffff;
+  --line: #dce6e9;
+  --text: #13252c;
+  --text-muted: #5f757e;
+  --text-disabled: #a9bcc2;
+
+  --primary: #00798c;
+  --primary-deep: #005263;
+  --primary-soft: #d7edf1;
+  --on-primary: #ffffff;
+
+  --positive: #0e9a72;
+  --positive-deep: #04624a;
+  --positive-soft: #d8f1e8;
+
+  --attention: #e8850c;
+  --attention-deep: #8a4e00;
+  --attention-soft: #fbebd6;
+}
+
+[data-theme='bubblegum'] {
+  --bg: #fff6f8;
+  --surface: #ffffff;
+  --line: #ebdce2;
+  --text: #241520;
+  --text-muted: #8a7480;
+  --text-disabled: #c3adb6;
+
+  --primary: #e0246b;
+  --primary-deep: #a61150;
+  --primary-soft: #fce3ec;
+  --on-primary: #ffffff;
+
+  --positive: #00bf8f;
+  --positive-deep: #00614a;
+  --positive-soft: #d9f6ee;
+
+  --attention: #d97706;
+  --attention-deep: #8a4e00;
+  --attention-soft: #fbebd6;
+}
+
+/*
+ * Receipt paper. A thermal print is black on white whatever the shop's
+ * theme is, so these are fixed rather than themed — but they live here so
+ * that "one file holds every literal colour" stays literally true.
+ */
+:root {
+  --paper: #ffffff;
+  --paper-ink: #000000;
+}
+
+/*
+ * Derived values. No literals below this line: everything is composed from
+ * the tokens above, so it follows whichever theme is active.
+ */
+:root {
+  /* The five order stages, drawn only from the semantic palette:
+     not started → in progress → heat → done → collected. */
+  --status-received: var(--text-disabled);
+  --status-washing: var(--primary);
+  --status-drying: var(--attention);
+  --status-ready: var(--positive);
+  --status-claimed: var(--text);
+
+  /* Payment meanings. Unpaid and partial share the attention family and
+     are told apart by their label and by pill vs plain text. */
+  --pay-unpaid: var(--attention-deep);
+  --pay-partial: var(--attention-deep);
+  --pay-paid: var(--positive-deep);
+
+  /* Flat and tactile: a hairline ring, never a floating shadow. */
+  --shadow-card: 0 0 0 1px var(--line);
+
+  /* Modal scrim and press tint, mixed from tokens so they follow the theme. */
+  --scrim: color-mix(in srgb, var(--text) 55%, transparent);
+  --tap-tint: color-mix(in srgb, var(--primary) 12%, transparent);
+}

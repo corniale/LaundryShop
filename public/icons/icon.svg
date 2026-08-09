@@ -1,10 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="48" fill="#0F172A"/>
-  <rect x="126" y="96" width="260" height="320" rx="12" fill="none" stroke="#F8FAFC" stroke-width="14"/>
-  <line x1="126" y1="176" x2="386" y2="176" stroke="#F8FAFC" stroke-width="10"/>
-  <circle cx="168" cy="136" r="8" fill="#F8FAFC"/>
-  <circle cx="204" cy="136" r="8" fill="#F8FAFC"/>
-  <circle cx="344" cy="136" r="16" fill="none" stroke="#F43F5E" stroke-width="10"/>
-  <circle cx="256" cy="294" r="76" fill="none" stroke="#06B6D4" stroke-width="14"/>
-  <path d="M222 294c17-14 34 14 51 0s17 14 34 0" stroke="#F8FAFC" stroke-width="11" fill="none" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Launcher icon. The one asset outside themes.css that carries its own
+    colours (spec.md § Theming 5): the OS draws it, so no CSS variable can
+    reach it, and there is exactly one copy rather than one per theme.
+    Values are Cold Wash's, checked for legibility on both themes' --bg.
+  -->
+  <rect width="512" height="512" rx="48" fill="#13252C"/>
+  <rect x="126" y="96" width="260" height="320" rx="12" fill="none" stroke="#F5F9FA" stroke-width="14"/>
+  <line x1="126" y1="176" x2="386" y2="176" stroke="#F5F9FA" stroke-width="10"/>
+  <circle cx="168" cy="136" r="8" fill="#F5F9FA"/>
+  <circle cx="204" cy="136" r="8" fill="#F5F9FA"/>
+  <circle cx="344" cy="136" r="16" fill="none" stroke="#E8850C" stroke-width="10"/>
+  <circle cx="256" cy="294" r="76" fill="none" stroke="#00798C" stroke-width="14"/>
+  <path d="M222 294c17-14 34 14 51 0s17 14 34 0" stroke="#F5F9FA" stroke-width="11" fill="none" stroke-linecap="round"/>
 </svg>

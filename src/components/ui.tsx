@@ -6,10 +6,12 @@ import { type ReactNode, type ButtonHTMLAttributes, type InputHTMLAttributes, fo
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
 
 const buttonStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-500 text-on-primary font-semibold active:bg-primary-300',
-  secondary: 'border border-line bg-surface text-ink font-semibold active:bg-wash-deep',
-  danger: 'bg-danger-700 text-surface font-semibold active:bg-danger-500',
-  ghost: 'bg-transparent text-primary-600 font-semibold active:bg-primary-100',
+  primary: 'bg-primary text-on-primary font-semibold active:bg-primary-deep',
+  secondary: 'border border-line bg-surface text-ink font-semibold active:bg-wash',
+  // §4: the one approved filled accent — --attention-deep clears 6.5:1 with
+  // white text. --on-primary is the contract's white; there is no --on-attention.
+  danger: 'bg-attention-deep text-on-primary font-semibold active:brightness-95',
+  ghost: 'bg-transparent text-primary-deep font-semibold active:bg-primary-soft',
 }
 
 export function Button({
@@ -163,7 +165,7 @@ export function Sheet({
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-card bg-wash-deep px-6 py-10 text-center text-ink-muted">{children}</div>
+    <div className="rounded-card bg-wash px-6 py-10 text-center text-ink-muted">{children}</div>
   )
 }
 
@@ -179,12 +181,12 @@ export function Stat({
   label: string
   value: string
   hint?: string
-  tone?: 'danger' | 'accent' | 'sun'
+  tone?: 'attention' | 'positive'
   /** Present = the tile is a control and gets a chevron. */
   onClick?: () => void
 }) {
   const toneClass =
-    tone === 'danger' ? 'text-danger-700' : tone === 'accent' ? 'text-accent-700' : tone === 'sun' ? 'text-sun-700' : 'text-ink'
+    tone === 'attention' ? 'text-attention-deep' : tone === 'positive' ? 'text-positive-deep' : 'text-ink'
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">

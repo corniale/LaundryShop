@@ -352,11 +352,11 @@ export function InventoryScreen() {
         return (
           <span className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
             {low && (
-              <span className="rounded-pill bg-danger-500/10 px-2 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-danger-700">
+              <span className="rounded-pill bg-attention-soft px-2 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-attention-deep">
                 {t('inventory.lowStock')}
               </span>
             )}
-            <span className={`font-mono font-medium ${low ? 'text-danger-700' : ''}`}>
+            <span className={`font-mono font-medium ${low ? 'text-attention-deep' : ''}`}>
               {r.item.currentQty} {r.item.unit}
             </span>
           </span>
@@ -396,7 +396,7 @@ export function InventoryScreen() {
       render: (r) =>
         r.expected === null ? (
           <button
-            className="text-xs text-primary-600 underline underline-offset-2"
+            className="text-xs text-primary-deep underline underline-offset-2"
             onClick={(e) => {
               e.stopPropagation()
               showRules()
@@ -420,7 +420,7 @@ export function InventoryScreen() {
           <span className="text-xs text-ink-muted">—</span>
         ) : (
           <span
-            className={`whitespace-nowrap font-mono ${r.flagged ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}
+            className={`whitespace-nowrap font-mono ${r.flagged ? 'font-semibold text-attention-deep' : 'text-ink-muted'}`}
             title={r.flagged ? t('inventory.varianceFlag') : undefined}
           >
             {r.variancePct >= 0 ? '+' : ''}
@@ -508,19 +508,19 @@ export function InventoryScreen() {
             <>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-medium">{r.item.name}</span>
-                <span className={`whitespace-nowrap font-mono font-medium ${low ? 'text-danger-700' : ''}`}>
+                <span className={`whitespace-nowrap font-mono font-medium ${low ? 'text-attention-deep' : ''}`}>
                   {r.item.currentQty} {r.item.unit}
                   {low && (
-                    <span className="ml-2 rounded-pill bg-danger-500/10 px-2 py-0.5 text-xs font-semibold text-danger-700">
+                    <span className="ml-2 rounded-pill bg-attention-soft px-2 py-0.5 text-xs font-semibold text-attention-deep">
                       {t('inventory.lowStock')}
                     </span>
                   )}
                 </span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-pill bg-wash-deep">
+              <div className="mt-2 h-2 overflow-hidden rounded-pill bg-wash">
                 <div
                   className="h-full rounded-pill"
-                  style={{ width: `${pct}%`, backgroundColor: low ? 'var(--danger-500)' : 'var(--accent-500)' }}
+                  style={{ width: `${pct}%`, backgroundColor: low ? 'var(--attention)' : 'var(--positive)' }}
                 />
               </div>
               <div className="mt-1 text-xs text-ink-muted">
@@ -531,7 +531,7 @@ export function InventoryScreen() {
                     {t('inventory.used')} {r.used.toFixed(1)} {r.item.unit}
                     {r.costOfUseCentavos !== null ? ` · ${formatCentavos(r.costOfUseCentavos)}` : ''}
                     {r.flagged && r.variancePct !== null ? (
-                      <span className="font-semibold text-sun-700">
+                      <span className="font-semibold text-attention-deep">
                         {' · '}
                         {r.variancePct >= 0 ? '+' : ''}
                         {r.variancePct.toFixed(0)}%
@@ -617,7 +617,7 @@ export function InventoryScreen() {
                     <span>
                       <span
                         className={`mr-2 font-mono font-medium ${
-                          m.type === 'in' ? 'text-accent-700' : m.type === 'out' ? 'text-danger-700' : 'text-sun-700'
+                          m.type === 'in' ? 'text-positive-deep' : m.type === 'out' ? 'text-attention-deep' : 'text-attention-deep'
                         }`}
                       >
                         {m.type === 'in' ? '+' : m.type === 'out' ? '−' : '±'}

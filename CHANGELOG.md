@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **Themes.** Every colour now comes from a sixteen-token contract defined in
+  one file, `src/styles/themes.css`, and the shop picks between **Cold Wash**
+  (default) and **Bubblegum** in Settings → Itsura. The theme is applied by a
+  blocking script in `<head>` so a launch never flashes the wrong palette, and
+  it changes instantly with no reload. `src/styles/themes.test.ts` fails the
+  build if a literal colour appears anywhere else. See `spec.md`.
+- Automatic dark mode was removed: it flipped the palette from the OS setting,
+  bypassing the stored theme. A hand-tuned `coldwash-dark` entry can be added
+  later through the checklist in `spec.md` § 8.
+- Inventory: expected-use rules are a grid (service × item) instead of a
+  dialog, and a rule can be measured per kilo, per piece, or per order.
+  Schema version 2.
+
 ## 1.0.0 — 2026-08-08
 
 Initial release. Schema version 1.

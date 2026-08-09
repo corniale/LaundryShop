@@ -30,7 +30,7 @@ export function MoreScreen() {
             onClick={() => navigate(item.to)}
             className="flex min-h-touch items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-left font-medium shadow-card"
           >
-            <Icon name={item.icon} size={22} className="shrink-0 text-primary-600" />
+            <Icon name={item.icon} size={22} className="shrink-0 text-primary-deep" />
             {t(item.key)}
             <span className="ml-auto text-ink-muted">›</span>
           </button>

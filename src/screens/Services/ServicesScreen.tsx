@@ -76,7 +76,7 @@ function ActiveSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         e.stopPropagation()
         onToggle()
       }}
-      className={`h-7 w-12 rounded-pill p-1 transition-colors ${on ? 'bg-accent-500' : 'bg-line'}`}
+      className={`h-7 w-12 rounded-pill p-1 transition-colors ${on ? 'bg-positive' : 'bg-line'}`}
     >
       <span className={`block h-5 w-5 rounded-pill bg-surface transition-transform ${on ? 'translate-x-5' : ''}`} />
     </button>
@@ -272,7 +272,7 @@ export function ServicesScreen() {
               <Input inputMode="decimal" type="number" min="0" step="0.5" value={form.minKg} onChange={(e) => setForm((f) => ({ ...f, minKg: e.target.value }))} />
             </Field>
           </div>
-          {editing && <p className="rounded-input bg-primary-100 p-3 text-sm text-primary-800">{t('services.priceNote')}</p>}
+          {editing && <p className="rounded-input bg-primary-soft p-3 text-sm text-primary-deep">{t('services.priceNote')}</p>}
           <Button disabled={!form.name.trim() || parsePesosInput(form.price) === null} onClick={() => void save()}>
             {t('services.save')}
           </Button>

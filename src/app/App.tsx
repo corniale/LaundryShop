@@ -101,7 +101,7 @@ export function App() {
   if (!booted) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-wash">
-        <div className="font-display text-md font-semibold text-primary-600">…</div>
+        <div className="font-display text-md font-semibold text-primary-deep">…</div>
       </div>
     )
   }

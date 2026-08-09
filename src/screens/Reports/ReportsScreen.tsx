@@ -31,10 +31,10 @@ type Preset = 'today' | 'week' | 'month' | 'custom'
 function BarList({ rows }: { rows: Array<{ label: string; value: number; display: string }> }) {
   const max = Math.max(...rows.map((r) => r.value), 0)
   const track = (value: number) => (
-    <div className="h-5 overflow-hidden rounded-input bg-wash-deep">
+    <div className="h-5 overflow-hidden rounded-input bg-wash">
       <div
         className="h-full rounded-input"
-        style={{ width: `${max > 0 ? (value / max) * 100 : 0}%`, backgroundColor: 'var(--primary-500)' }}
+        style={{ width: `${max > 0 ? (value / max) * 100 : 0}%`, backgroundColor: 'var(--primary)' }}
       />
     </div>
   )
@@ -249,7 +249,7 @@ export function ReportsScreen() {
 
       <Card>
         <div className="mb-1 text-xs font-medium text-ink-muted">{t('reports.income')}</div>
-        <div className="font-mono text-xl font-medium text-accent-700">{formatCentavos(incomeTotal)}</div>
+        <div className="font-mono text-xl font-medium text-positive-deep">{formatCentavos(incomeTotal)}</div>
       </Card>
 
       {/* Income over the chosen range */}
@@ -266,7 +266,7 @@ export function ReportsScreen() {
               style={{
                 height: `${(d.value / maxBar) * 100}%`,
                 minHeight: d.value > 0 ? 3 : 1,
-                backgroundColor: d.value > 0 ? 'var(--primary-500)' : 'var(--line)',
+                backgroundColor: d.value > 0 ? 'var(--primary)' : 'var(--line)',
               }}
             />
           ))}
@@ -313,7 +313,7 @@ export function ReportsScreen() {
           {withBalance.map((c, i) => (
             <div key={i} className="flex justify-between text-sm">
               <span>{c.name}</span>
-              <span className="font-mono text-danger-700">{formatCentavos(c.balance)}</span>
+              <span className="font-mono text-attention-deep">{formatCentavos(c.balance)}</span>
             </div>
           ))}
           {withBalance.length === 0 && <div className="text-sm text-ink-muted">{t('payments.allPaid')}</div>}

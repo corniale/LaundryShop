@@ -9,6 +9,7 @@ import { runBackup } from '../../backup/destinations'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { Card, Button, Field, Input, TextArea, Chip, Sheet } from '../../components/ui'
+import { ThemePicker } from './ThemePicker'
 
 export function SettingsScreen() {
   const navigate = useNavigate()
@@ -153,12 +154,18 @@ export function SettingsScreen() {
         <Button onClick={() => void save()}>{t('settings.save')}</Button>
       </Card>
 
+      <Card>
+        <h2 className="font-display text-base font-semibold">{t('settings.itsura')}</h2>
+        <p className="mb-3 mt-0.5 text-sm text-ink-muted">{t('settings.itsuraHelp')}</p>
+        <ThemePicker />
+      </Card>
+
       <Button variant="secondary" onClick={() => navigate('/more/backup')}>
         {t('more.backup')} ›
       </Button>
 
-      <Card className="border border-danger-500/40">
-        <h2 className="mb-2 font-display text-base font-semibold text-danger-700">{t('settings.dangerZone')}</h2>
+      <Card className="border border-attention">
+        <h2 className="mb-2 font-display text-base font-semibold text-attention-deep">{t('settings.dangerZone')}</h2>
         <p className="mb-3 text-sm text-ink-muted">{t('settings.resetWarning')}</p>
         <Button variant="danger" className="w-full" onClick={() => setResetOpen(true)}>
           {t('settings.resetAll')}
@@ -167,7 +174,7 @@ export function SettingsScreen() {
 
       <Sheet open={resetOpen} onClose={() => setResetOpen(false)} title={t('settings.resetAll')}>
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-danger-700">{t('settings.resetWarning')}</p>
+          <p className="text-sm text-attention-deep">{t('settings.resetWarning')}</p>
           <p className="text-sm font-medium">{t('backupData.typeToConfirm', { word: 'BURAHIN' })}</p>
           <Input value={resetText} onChange={(e) => setResetText(e.target.value)} className="font-mono uppercase" />
           <Button variant="danger" disabled={resetText.trim().toUpperCase() !== 'BURAHIN'} onClick={() => void resetAll()}>

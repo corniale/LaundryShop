@@ -44,9 +44,12 @@ function drawStubCanvas(text: string): HTMLCanvasElement {
   canvas.height = (lines.length * lineHeight + pad * 2) * scale
   const ctx = canvas.getContext('2d')!
   ctx.scale(scale, scale)
-  ctx.fillStyle = '#ffffff'
+  // Thermal paper is not themed, but the two values still come from
+  // themes.css so no literal colour lives outside it (spec.md § Theming 1).
+  const root = getComputedStyle(document.documentElement)
+  ctx.fillStyle = root.getPropertyValue('--paper').trim()
   ctx.fillRect(0, 0, width, lines.length * lineHeight + pad * 2)
-  ctx.fillStyle = '#000000'
+  ctx.fillStyle = root.getPropertyValue('--paper-ink').trim()
   lines.forEach((line, i) => {
     const isCode = line.startsWith(t('stub.orderCode'))
     ctx.font = isCode ? 'bold 20px monospace' : i === 0 ? 'bold 17px monospace' : '15px monospace'

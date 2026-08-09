@@ -120,7 +120,7 @@ export function StatusRail({
           style={{
             left: '10%',
             width: `${(current / (STATUS_ORDER.length - 1)) * 80}%`,
-            backgroundColor: 'var(--rail-accent)',
+            backgroundColor: 'var(--primary)',
           }}
         />
         {STATUS_ORDER.map((s, i) => {
@@ -153,20 +153,20 @@ export function StatusRail({
                     // Unfilled, but opaque: a see-through node would let
                     // the connector line cross the icon behind it.
                     backgroundColor: done
-                      ? 'var(--rail-accent)'
+                      ? 'var(--primary)'
                       : now
                         ? 'var(--surface)'
-                        : 'var(--wash-deep)',
+                        : 'var(--bg)',
                     border: now
-                      ? '2px solid var(--rail-accent)'
+                      ? '2px solid var(--primary)'
                       : done
-                        ? '2px solid var(--rail-accent)'
+                        ? '2px solid var(--primary)'
                         : '1.5px solid var(--line)',
                     color: done
-                      ? 'var(--rail-on-accent)'
+                      ? 'var(--on-primary)'
                       : now
-                        ? 'var(--rail-accent)'
-                        : 'var(--ink-muted)',
+                        ? 'var(--primary)'
+                        : 'var(--text-muted)',
                   }}
                 >
                   <Icon
@@ -180,7 +180,7 @@ export function StatusRail({
                   className={`text-center text-[0.6875rem] leading-tight ${
                     now ? 'font-medium' : ''
                   }`}
-                  style={{ color: now ? 'var(--rail-accent)' : done ? 'var(--ink-muted)' : 'var(--ink-muted)' }}
+                  style={{ color: now ? 'var(--primary)' : done ? 'var(--text-muted)' : 'var(--text-muted)' }}
                 >
                   {statusLabel(s)}
                 </span>
@@ -194,13 +194,13 @@ export function StatusRail({
         <button
           type="button"
           onClick={() => setUnlocked(true)}
-          className="mt-3 min-h-touch text-sm font-semibold text-primary-600"
+          className="mt-3 min-h-touch text-sm font-semibold text-primary-deep"
         >
           {t('rail.unlock')}
         </button>
       )}
 
-      {error && <p className="mt-2 text-sm text-danger-700">{error}</p>}
+      {error && <p className="mt-2 text-sm text-attention-deep">{error}</p>}
 
       <Sheet
         open={pending !== null}
@@ -259,7 +259,7 @@ export function StatusBadge({ status }: { status: OrderStatus }) {
   return (
     <span
       className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-pill"
-      style={{ border: '1.5px solid var(--rail-accent)', color: 'var(--rail-accent)' }}
+      style={{ border: '1.5px solid var(--primary)', color: 'var(--primary)' }}
       title={statusLabel(status)}
     >
       <Icon size={20} stroke={1.75} aria-hidden />

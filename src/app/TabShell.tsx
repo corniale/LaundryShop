@@ -28,7 +28,7 @@ function RailItem({ to, label, icon }: { to: string; label: string; icon: IconNa
       className={({ isActive }) =>
         `flex min-h-touch w-full items-center gap-3 rounded-input px-4 py-3 font-medium transition-colors duration-150 ${
           isActive
-            ? 'bg-primary-100 font-semibold text-primary-800'
+            ? 'bg-primary-soft font-semibold text-primary-deep'
             : 'text-ink-muted hover:bg-wash hover:text-ink'
         }`
       }
@@ -49,12 +49,12 @@ function BarItem({ to, label, icon }: { to: string; label: string; icon: IconNam
         <>
           <span
             className={`flex h-8 w-16 items-center justify-center rounded-pill transition-colors duration-150 ${
-              isActive ? 'bg-primary-100 text-primary-800' : 'text-ink-muted'
+              isActive ? 'bg-primary-soft text-primary-deep' : 'text-ink-muted'
             }`}
           >
             <Icon name={icon} size={22} />
           </span>
-          <span className={isActive ? 'font-semibold text-primary-800' : 'text-ink-muted'}>{label}</span>
+          <span className={isActive ? 'font-semibold text-primary-deep' : 'text-ink-muted'}>{label}</span>
         </>
       )}
     </NavLink>
@@ -67,7 +67,7 @@ export function TabShell() {
       {/* Left rail — tablet and desktop */}
       <nav className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface p-3 pt-safe md:flex">
         <div className="mb-2 flex items-center gap-2.5 px-4 py-4">
-          <Icon name="orders" size={26} className="shrink-0 text-primary-500" />
+          <Icon name="orders" size={26} className="shrink-0 text-primary" />
           <div className="font-display text-md font-semibold leading-tight text-ink">
             Laundry
             <br />

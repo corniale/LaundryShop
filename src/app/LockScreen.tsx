@@ -86,9 +86,9 @@ export function LockScreen() {
               placeholder="XXXX-XXXX-XXXX"
               autoFocus
             />
-            {error && <p className="text-sm text-danger-700">{error}</p>}
+            {error && <p className="text-sm text-attention-deep">{error}</p>}
             <button
-              className="min-h-touch w-full max-w-xs rounded-input bg-primary-600 py-3 font-semibold text-surface"
+              className="min-h-touch w-full max-w-xs rounded-input bg-primary-deep py-3 font-semibold text-surface"
               onClick={() => void tryRecovery()}
             >
               {t('common.confirm')}
@@ -106,7 +106,7 @@ export function LockScreen() {
               autoFocus
             />
             <button
-              className="min-h-touch w-full max-w-xs rounded-input bg-primary-600 py-3 font-semibold text-surface disabled:opacity-40"
+              className="min-h-touch w-full max-w-xs rounded-input bg-primary-deep py-3 font-semibold text-surface disabled:opacity-40"
               disabled={!validPinFormat(newPin)}
               onClick={() => void setRecoveredPin()}
             >
@@ -124,7 +124,7 @@ export function LockScreen() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-wash p-6 pb-safe">
       <div className="text-center">
-        <h1 className="font-display text-xl font-bold text-primary-800">
+        <h1 className="font-display text-xl font-bold text-primary-deep">
           {appMeta?.demoMode ? 'Bubbles Laundry Shop' : ''}
         </h1>
         <p className="mt-1 text-ink-muted">{selected ? t('lock.title') : t('lock.who')}</p>
@@ -142,7 +142,7 @@ export function LockScreen() {
               }}
               className={`min-h-touch rounded-pill border px-5 py-2.5 font-medium ${
                 selected?.id === u.id
-                  ? 'border-primary-600 bg-primary-600 text-surface'
+                  ? 'border-primary-deep bg-primary-deep text-surface'
                   : 'border-line bg-surface text-ink'
               }`}
             >
@@ -159,15 +159,15 @@ export function LockScreen() {
             {Array.from({ length: Math.max(4, pin.length) }, (_, i) => (
               <div
                 key={i}
-                className={`h-3.5 w-3.5 rounded-pill ${i < pin.length ? 'bg-primary-600' : 'bg-line'}`}
+                className={`h-3.5 w-3.5 rounded-pill ${i < pin.length ? 'bg-primary-deep' : 'bg-line'}`}
               />
             ))}
           </div>
 
           {coolingDown ? (
-            <p className="text-sm text-danger-700">{t('lock.cooldown', { n: secondsLeft })}</p>
+            <p className="text-sm text-attention-deep">{t('lock.cooldown', { n: secondsLeft })}</p>
           ) : error ? (
-            <p className="text-sm text-danger-700">
+            <p className="text-sm text-attention-deep">
               {error} ({attemptsLeft})
             </p>
           ) : (
@@ -185,7 +185,7 @@ export function LockScreen() {
                   onClick={() =>
                     key === '⌫' ? setPin((p) => p.slice(0, -1)) : press(key)
                   }
-                  className="min-h-touch rounded-card bg-surface py-4 font-mono text-lg shadow-card active:bg-primary-100 disabled:opacity-40"
+                  className="min-h-touch rounded-card bg-surface py-4 font-mono text-lg shadow-card active:bg-primary-soft disabled:opacity-40"
                 >
                   {key}
                 </button>
@@ -195,7 +195,7 @@ export function LockScreen() {
 
           {pin.length >= 4 && !coolingDown && (
             <button
-              className="min-h-touch w-full max-w-[280px] rounded-input bg-primary-600 py-3 font-semibold text-surface"
+              className="min-h-touch w-full max-w-[280px] rounded-input bg-primary-deep py-3 font-semibold text-surface"
               onClick={() => void submitPin(pin)}
             >
               {t('common.confirm')}
@@ -209,7 +209,7 @@ export function LockScreen() {
       )}
 
       {owner?.recoveryHash && (
-        <button className="min-h-touch text-sm text-primary-600" onClick={() => setRecoveryMode(true)}>
+        <button className="min-h-touch text-sm text-primary-deep" onClick={() => setRecoveryMode(true)}>
           {t('lock.forgot')}
         </button>
       )}

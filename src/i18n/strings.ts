@@ -474,6 +474,15 @@ const strings = {
 
   // ── Shop Settings ──────────────────────────────────────────────
   'settings.title': { tl: 'Shop Settings', en: 'Shop Settings' },
+  // Itsura — "look". Kept in both locales: it is the name of the section.
+  'settings.itsura': { tl: 'Itsura', en: 'Itsura' },
+  'settings.itsuraHelp': {
+    tl: 'Pumili ng kulay ng app. Agad itong mababago.',
+    en: 'Pick the app’s colours. The change is instant.',
+  },
+  'settings.theme.coldwash': { tl: 'Cold Wash', en: 'Cold Wash' },
+  'settings.theme.bubblegum': { tl: 'Bubblegum', en: 'Bubblegum' },
+  'settings.themeSelected': { tl: 'Napili', en: 'Selected' },
   'settings.shopName': { tl: 'Pangalan ng shop', en: 'Shop name' },
   'settings.ownerName': { tl: 'Pangalan ng may-ari', en: 'Owner name' },
   'settings.address': { tl: 'Address', en: 'Address' },
