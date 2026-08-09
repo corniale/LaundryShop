@@ -18,6 +18,7 @@ import { advanceOrderStatus } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { statusLabel } from '../../components/WashLine'
+import { StageIcon } from '../../components/StatusRail'
 import { Chip, Input, Button, EmptyState, Sheet } from '../../components/ui'
 import { fmtDate } from '../../app/format'
 import { OrderIntake } from './OrderIntake'
@@ -136,7 +137,7 @@ export function OrdersScreen() {
     const cols = Object.fromEntries(STATUS_ORDER.map((s) => [s, [] as Order[]])) as Record<OrderStatus, Order[]>
     for (const o of searched) {
       if (o.voidedAt) continue
-      // keep board columns focused: claimed shows the 15 most recent
+      // the board is a work queue; claimed is capped and links out
       cols[o.status].push(o)
     }
     for (const s of STATUS_ORDER) {
@@ -144,7 +145,7 @@ export function OrdersScreen() {
     }
     cols.claimed = cols.claimed
       .sort((a, b) => (b.claimedAt ?? b.receivedAt).localeCompare(a.claimedAt ?? a.receivedAt))
-      .slice(0, 15)
+      .slice(0, 5)
     return cols
   }, [searched])
 
@@ -276,18 +277,30 @@ export function OrdersScreen() {
           {STATUS_ORDER.map((s) => {
             const col = boardColumns[s]
             const next = nextStatus(s)
+            const kilos = col.reduce((sum, o) => sum + o.kilos, 0)
             return (
               <section
                 key={s}
-                className="w-[82vw] max-w-[300px] shrink-0 snap-start rounded-card bg-wash-deep p-2 md:w-[260px]"
+                className="w-[82vw] max-w-[300px] shrink-0 snap-start rounded-card border border-line bg-wash-deep p-2 md:w-[264px]"
                 aria-label={statusLabel(s)}
               >
-                <header className="flex items-center gap-2 px-2 py-2">
-                  <span className="h-2.5 w-2.5 rounded-pill" style={{ backgroundColor: STATUS_VAR[s] }} />
-                  <span className="label-caps !text-ink">{statusLabel(s)}</span>
-                  <span className="ml-auto rounded-pill border border-line bg-surface px-2 py-0.5 font-mono text-xs font-medium">
-                    {counts[s]}
-                  </span>
+                {/* Header carries the column's identity and load, so the
+                    cards never have to repeat the destination stage. */}
+                <header className="mb-2 border-b border-line px-2 pb-2 pt-1.5">
+                  {/* The header wears the stage icon, so a card's advance
+                      button reads as "send it to that column". */}
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: STATUS_VAR[s] }}>
+                      <StageIcon status={s} size={17} />
+                    </span>
+                    <span className="label-caps !text-ink">{statusLabel(s)}</span>
+                    <span className="ml-auto rounded-pill border border-line bg-surface px-2 py-0.5 font-mono text-xs font-medium">
+                      {counts[s]}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 pl-[1.6rem] text-xs text-ink-muted">
+                    {kilos.toFixed(1)} {t('orders.kg')}
+                  </div>
                 </header>
                 <div className="flex flex-col gap-2">
                   {col.map((o) => {
@@ -297,24 +310,32 @@ export function OrdersScreen() {
                       <div
                         key={o.id}
                         onClick={() => navigate(`/orders/${o.id}`)}
-                        className="cursor-pointer rounded-card border border-line bg-surface p-3 transition-colors duration-150 hover:border-ink-muted/40"
+                        className="relative cursor-pointer rounded-card border border-line bg-surface py-2.5 pl-3 pr-14 transition-colors duration-150 hover:border-ink-muted/40"
+                        style={
+                          overdue
+                            ? { borderLeft: '3px solid var(--danger-500)', paddingLeft: 'calc(0.75rem - 2px)' }
+                            : undefined
+                        }
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="font-mono text-sm font-medium">{o.code}</span>
                           <span className="font-mono text-sm font-medium">{formatCentavos(o.totalCentavos)}</span>
                         </div>
                         <div className="truncate text-sm">{customerName(o)}</div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-ink-muted">
                           <span>
                             {o.kilos} {t('orders.kg')}
                           </span>
                           <span>·</span>
-                          <span className={overdue ? 'font-semibold text-sun-700' : ''}>
-                            {t('orders.promised')}: {fmtDate(o.promisedAt)}
+                          <span className={overdue ? 'font-semibold text-danger-700' : ''}>
+                            {fmtDate(o.promisedAt)}
                           </span>
-                          <span className={`rounded-pill px-1.5 py-0.5 font-semibold ${payToneClass(pStatus)}`}>
-                            {t(`pay.${pStatus}` as 'pay.unpaid')}
-                          </span>
+                          {/* Exception-based: only flag what still owes money */}
+                          {pStatus !== 'paid' && (
+                            <span className={`rounded-pill px-1.5 py-0.5 font-semibold ${payToneClass(pStatus)}`}>
+                              {t(`pay.${pStatus}` as 'pay.unpaid')}
+                            </span>
+                          )}
                         </div>
                         {next && (
                           <button
@@ -322,16 +343,32 @@ export function OrdersScreen() {
                               e.stopPropagation()
                               void advance(o, next)
                             }}
-                            className="mt-2 min-h-touch w-full rounded-input bg-primary-100 text-sm font-semibold text-primary-800"
+                            aria-label={t('rail.advanceTo', { status: statusLabel(next) })}
+                            title={t('rail.advanceTo', { status: statusLabel(next) })}
+                            className="absolute right-2.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-pill border transition-colors duration-150"
+                            style={{ borderColor: STATUS_VAR[next], color: STATUS_VAR[next] }}
                           >
-                            {statusLabel(next)} →
+                            <StageIcon status={next} size={19} />
                           </button>
                         )}
                       </div>
                     )
                   })}
                   {col.length === 0 && (
-                    <div className="rounded-input px-3 py-6 text-center text-xs text-ink-muted">—</div>
+                    <div className="px-3 py-6 text-center text-xs text-ink-muted">{t('orders.columnEmpty')}</div>
+                  )}
+                  {/* The board is about work in progress; the archive lives
+                      in the table, one tap away. */}
+                  {s === 'claimed' && counts.claimed > col.length && (
+                    <button
+                      onClick={() => {
+                        setView('list')
+                        setParams({ status: 'claimed' })
+                      }}
+                      className="min-h-touch rounded-input px-3 text-sm font-semibold text-primary-600"
+                    >
+                      {t('orders.viewAllClaimed')} ({counts.claimed}) →
+                    </button>
                   )}
                 </div>
               </section>

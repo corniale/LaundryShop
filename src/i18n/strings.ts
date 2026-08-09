@@ -156,6 +156,8 @@ const strings = {
   'orders.stage': { tl: 'Yugto', en: 'Stage' },
   'orders.nextStage': { tl: 'Susunod', en: 'Next' },
   'orders.viewBoard': { tl: 'Board', en: 'Board' },
+  'orders.columnEmpty': { tl: 'Wala dito', en: 'Nothing here' },
+  'orders.viewAllClaimed': { tl: 'Tingnan lahat', en: 'View all' },
   'orders.message': { tl: 'I-message', en: 'Message' },
 
   // ── Customers ──────────────────────────────────────────────────

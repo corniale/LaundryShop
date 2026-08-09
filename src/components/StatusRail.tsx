@@ -242,6 +242,12 @@ export function StatusRail({
   )
 }
 
+/** The stage's icon on its own, for compact controls. */
+export function StageIcon({ status, size = 20 }: { status: OrderStatus; size?: number }) {
+  const Icon = ICONS[status]
+  return <Icon size={size} stroke={1.75} aria-hidden />
+}
+
 /**
  * Compact variant for list rows: the current stage icon only. Never
  * advances — tapping the row opens the order, where the staffer can see
