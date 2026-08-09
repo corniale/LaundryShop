@@ -165,7 +165,7 @@ export function LockScreen() {
           </div>
 
           {coolingDown ? (
-            <p className="text-sm text-danger-700">{t('lock.cooldown', { s: secondsLeft })}</p>
+            <p className="text-sm text-danger-700">{t('lock.cooldown', { n: secondsLeft })}</p>
           ) : error ? (
             <p className="text-sm text-danger-700">
               {error} ({attemptsLeft})

@@ -8,7 +8,8 @@ import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
 import { paidCentavos, balanceCentavos } from '../../domain/payments'
 import { ShopRail } from '../../components/WashLine'
-import { Card, Stat, Button, Sheet, EmptyState } from '../../components/ui'
+import { Card, Stat, Button, Sheet } from '../../components/ui'
+import { DataTable } from '../../components/DataTable'
 import { backupHealth, promptLevel, markPrompted, storageUsage } from '../../backup/scheduler'
 import { runBackup } from '../../backup/destinations'
 import { useToast } from '../../components/Toast'
@@ -74,6 +75,8 @@ export function TodayScreen() {
     0,
   )
   const lowStock = inventory.filter((i) => i.currentQty <= i.reorderPoint)
+  const inProgress = live.filter((o) => o.status === 'washing' || o.status === 'drying').length
+  const todayKey = new Date().toISOString().slice(0, 10)
 
   const health = backupHealth(appMeta?.lastBackupAt)
 
@@ -168,61 +171,129 @@ export function TodayScreen() {
         />
       </Card>
 
-      {/* Four figures */}
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <Stat label={t('today.ordersToday')} value={String(todayOrders.length)} />
-        <Stat label={t('today.needsRelease')} value={String(dueOut.length)} tone={dueOut.length ? 'sun' : undefined} />
-        <Stat label={t('today.incomeToday')} value={formatCentavos(collectedToday)} tone="accent" />
-        <Stat label={t('today.outstanding')} value={formatCentavos(outstanding)} tone={outstanding > 0 ? 'danger' : undefined} />
+      {/* Six figures, 3 x 2. Every tile opens the view it summarises. */}
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+        <Stat
+          label={t('today.ordersToday')}
+          value={String(todayOrders.length)}
+          onClick={() => navigate(`/orders?status=all&from=${todayKey}&to=${todayKey}`)}
+        />
+        <Stat
+          label={t('today.inProgress')}
+          value={String(inProgress)}
+          onClick={() => navigate('/orders?status=inprogress')}
+        />
+        <Stat
+          label={t('today.needsRelease')}
+          value={String(dueOut.length)}
+          tone={dueOut.length ? 'sun' : undefined}
+          onClick={() => navigate('/orders?status=ready')}
+        />
+        <Stat
+          label={t('today.incomeToday')}
+          value={formatCentavos(collectedToday)}
+          tone="accent"
+          onClick={() => navigate('/payments?tab=all')}
+        />
+        <Stat
+          label={t('today.outstanding')}
+          value={formatCentavos(outstanding)}
+          tone={outstanding > 0 ? 'danger' : undefined}
+          onClick={() => navigate('/payments?tab=unpaid')}
+        />
+        <Stat
+          label={t('today.lowStock')}
+          value={
+            lowStock.length > 0 ? t('today.lowStockCount', { n: lowStock.length }) : t('today.allStocked')
+          }
+          hint={lowStock.length > 0 ? lowStock.map((i) => i.name).join(', ') : undefined}
+          tone={lowStock.length > 0 ? 'sun' : undefined}
+          onClick={() => navigate('/more/inventory')}
+        />
       </div>
-
-      {/* Low stock — a card like its neighbours, with an amber accent */}
-      {lowStock.length > 0 && (
-        <Card onClick={() => navigate('/more/inventory')} className="flex items-center gap-3">
-          <span
-            aria-hidden
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-input bg-sun-500/15 text-md"
-          >
-            📦
-          </span>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-sun-700">{t('today.lowStock')}</div>
-            <div className="truncate text-sm text-ink-muted">
-              {lowStock.map((i) => `${i.name} (${i.currentQty} ${i.unit})`).join(' · ')}
-            </div>
-          </div>
-          <span className="ml-auto shrink-0 text-ink-muted">›</span>
-        </Card>
-      )}
 
       {/* Not yet claimed */}
       <section>
         <h2 className="mb-2 font-display text-md font-semibold">{t('today.notClaimed')}</h2>
-        {readyOrders.length === 0 ? (
-          <EmptyState>{t('today.emptyOrders')}</EmptyState>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {readyOrders.map((o) => {
-              const overdueDays = Math.floor((now.getTime() - new Date(o.promisedAt).getTime()) / 86_400_000)
-              return (
-                <Card key={o.id} className="flex items-center justify-between gap-3" onClick={() => navigate(`/orders/${o.id}`)}>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-medium">{o.code}</span>
-                      <span className="truncate text-sm">{customerName(o)}</span>
-                      {overdueDays >= 3 && (
-                        <span className="rounded-pill bg-sun-500/15 px-2 py-0.5 text-xs font-semibold text-sun-700">
-                          {t('today.overdue')} {overdueDays}d
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-ink-muted">
-                      {t('orders.promised')} {fmtDate(o.promisedAt)} · {formatCentavos(o.totalCentavos)}
-                    </div>
-                  </div>
+        <DataTable
+          rows={readyOrders}
+          getRowKey={(o) => o.id}
+          onRowClick={(o) => navigate(`/orders/${o.id}`)}
+          initialSortKey="promised"
+          initialSortDesc={false}
+          emptyText={t('today.emptyOrders')}
+          columns={[
+            {
+              key: 'code',
+              header: t('stub.orderCode'),
+              sortValue: (o) => o.code,
+              defaultDesc: false,
+              render: (o) => <span className="whitespace-nowrap font-mono font-medium">{o.code}</span>,
+            },
+            {
+              key: 'customer',
+              header: t('orders.customer'),
+              sortValue: (o) => customerName(o).toLowerCase(),
+              defaultDesc: false,
+              render: (o) => customerName(o),
+            },
+            {
+              key: 'promised',
+              header: t('orders.readyBy'),
+              sortValue: (o) => o.promisedAt,
+              defaultDesc: false,
+              render: (o) => {
+                const days = Math.floor((now.getTime() - new Date(o.promisedAt).getTime()) / 86_400_000)
+                return (
+                  <span className={`whitespace-nowrap text-xs ${days >= 3 ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
+                    {fmtDate(o.promisedAt)}
+                    {days >= 3 ? ` · ${t('today.overdue')} ${days}d` : ''}
+                  </span>
+                )
+              },
+            },
+            {
+              key: 'total',
+              header: t('orders.total'),
+              align: 'right',
+              sortValue: (o) => o.totalCentavos,
+              render: (o) => <span className="font-mono">{formatCentavos(o.totalCentavos)}</span>,
+            },
+            {
+              key: 'action',
+              header: t('orders.message'),
+              align: 'right',
+              render: (o) => (
+                <Button
+                  variant="secondary"
+                  className="!py-1.5 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void messageCustomer(o)
+                  }}
+                >
+                  {t('orders.message')}
+                </Button>
+              ),
+            },
+          ]}
+          renderCard={(o) => {
+            const days = Math.floor((now.getTime() - new Date(o.promisedAt).getTime()) / 86_400_000)
+            return (
+              <>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-mono text-sm font-medium">{o.code}</span>
+                  <span className="font-mono text-sm font-medium">{formatCentavos(o.totalCentavos)}</span>
+                </div>
+                <div className="truncate text-sm">{customerName(o)}</div>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <span className={`text-xs ${days >= 3 ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
+                    {t('orders.readyBy')}: {fmtDate(o.promisedAt)}
+                    {days >= 3 ? ` · ${t('today.overdue')} ${days}d` : ''}
+                  </span>
                   <Button
                     variant="secondary"
-                    className="shrink-0 !py-2 text-sm"
+                    className="!py-1.5 text-xs"
                     onClick={(e) => {
                       e.stopPropagation()
                       void messageCustomer(o)
@@ -230,11 +301,11 @@ export function TodayScreen() {
                   >
                     {t('orders.message')}
                   </Button>
-                </Card>
-              )
-            })}
-          </div>
-        )}
+                </div>
+              </>
+            )
+          }}
+        />
       </section>
 
       <Button variant="secondary" onClick={() => setCloseDayOpen(true)}>

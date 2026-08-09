@@ -9,6 +9,7 @@ import { addUser, updateUser } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { Card, Button, Sheet, Field, Input, Chip } from '../../components/ui'
+import { DataTable } from '../../components/DataTable'
 import { fmtDateTime } from '../../app/format'
 
 export function UsersScreen() {
@@ -120,16 +121,49 @@ export function UsersScreen() {
             </Chip>
           ))}
         </div>
-        <div className="flex max-h-96 flex-col gap-1 overflow-y-auto text-sm">
-          {filteredAudit.map((a) => (
-            <div key={a.id} className="border-b border-line py-1.5 last:border-0">
-              <div>{a.summary}</div>
+        <DataTable
+          rows={filteredAudit}
+          getRowKey={(a) => a.id}
+          initialSortKey="at"
+          emptyText={t('reports.empty')}
+          columns={[
+            {
+              key: 'at',
+              header: t('users.when'),
+              sortValue: (a) => a.at,
+              render: (a) => <span className="whitespace-nowrap text-xs text-ink-muted">{fmtDateTime(a.at)}</span>,
+            },
+            {
+              key: 'by',
+              header: t('users.name'),
+              sortValue: (a) => usersById.get(a.byUserId) ?? '',
+              defaultDesc: false,
+              render: (a) => usersById.get(a.byUserId) ?? '—',
+            },
+            {
+              key: 'action',
+              header: t('users.action'),
+              sortValue: (a) => a.action,
+              defaultDesc: false,
+              render: (a) => <span className="text-xs text-ink-muted">{a.action}</span>,
+            },
+            {
+              key: 'summary',
+              header: t('users.details'),
+              sortValue: (a) => a.summary.toLowerCase(),
+              defaultDesc: false,
+              render: (a) => a.summary,
+            },
+          ]}
+          renderCard={(a) => (
+            <>
+              <div className="text-sm">{a.summary}</div>
               <div className="text-xs text-ink-muted">
                 {usersById.get(a.byUserId) ?? '—'} · {fmtDateTime(a.at)} · {a.action}
               </div>
-            </div>
-          ))}
-        </div>
+            </>
+          )}
+        />
       </Card>
 
       {/* Add user */}

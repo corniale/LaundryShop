@@ -345,7 +345,7 @@ export function CustomersScreen() {
                       )}
                     </div>
                     <div className="text-sm text-ink-muted">
-                      {c.contact} · {d?.orderCount ?? 0} {t('customers.orders')}
+                      {c.contact} · {t('customers.orderCount', { n: d?.orderCount ?? 0 })}
                     </div>
                   </Card>
                 )

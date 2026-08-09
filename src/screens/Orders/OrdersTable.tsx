@@ -1,9 +1,11 @@
 /**
- * Orders table — sortable, dense, and still legible about progress:
- * every row carries a five-tick Stage cell and a Next button that
- * advances the order one stage in a single click (no drill-down).
+ * Orders table — sortable, dense, and still legible about progress.
+ *
+ * Icon grammar shared with the board and the rail: a circled icon is a
+ * control, a bare icon is state. So the Stage cell shows a plain icon
+ * and the Next cell a circled one in the destination stage's colour.
  * Phones get the same data and the same one-click advance as stacked
- * rows, since a seven-column table cannot be used at 360px.
+ * rows, since a nine-column table cannot be used at 360px.
  */
 import type { Order, OrderStatus, Payment } from '../../data/types'
 import { t } from '../../i18n/strings'
@@ -11,9 +13,18 @@ import { formatCentavos } from '../../domain/money'
 import { paymentStatus } from '../../domain/payments'
 import { statusIndex, nextStatus } from '../../domain/status'
 import { statusLabel } from '../../components/WashLine'
-import { StatusBadge } from '../../components/StatusRail'
+import { StageIcon } from '../../components/StatusRail'
+import { IconCheck } from '@tabler/icons-react'
 import { fmtDate } from '../../app/format'
 import { payToneClass } from './OrdersScreen'
+
+const STATUS_VAR: Record<OrderStatus, string> = {
+  received: 'var(--status-received)',
+  washing: 'var(--status-washing)',
+  drying: 'var(--status-drying)',
+  ready: 'var(--status-ready)',
+  claimed: 'var(--status-claimed)',
+}
 
 export type OrderSortKey = 'code' | 'customer' | 'service' | 'kilos' | 'total' | 'payment' | 'promised' | 'stage'
 
@@ -61,19 +72,36 @@ export function sortOrderRows(rows: OrderRow[], key: OrderSortKey, desc: boolean
   })
 }
 
+/**
+ * The app's one advance control, shared with the board: a circled icon
+ * in the destination stage's colour. Circles are controls; bare icons
+ * are state — which is why the Stage cell renders its icon uncircled.
+ */
 function NextButton({ status, onAdvance }: { status: OrderStatus; onAdvance: (to: OrderStatus) => void }) {
   const next = nextStatus(status)
-  if (!next) return <span className="text-xs text-ink-muted">—</span>
+  if (!next) {
+    return (
+      <IconCheck
+        size={15}
+        stroke={2.25}
+        className="inline-block"
+        style={{ color: 'var(--status-claimed)' }}
+        aria-label={statusLabel(status)}
+      />
+    )
+  }
   return (
     <button
       onClick={(e) => {
         e.stopPropagation()
         onAdvance(next)
       }}
-      title={t('orders.advance', { status: statusLabel(next) })}
-      className="min-h-touch whitespace-nowrap rounded-input border border-primary-500 px-2.5 py-1.5 text-xs font-semibold text-primary-600 transition-colors duration-150 hover:bg-primary-100"
+      aria-label={t('rail.advanceTo', { status: statusLabel(next) })}
+      title={t('rail.advanceTo', { status: statusLabel(next) })}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-pill border transition-colors duration-150"
+      style={{ borderColor: STATUS_VAR[next], color: STATUS_VAR[next] }}
     >
-      {statusLabel(next)} →
+      <StageIcon status={next} size={18} />
     </button>
   )
 }
@@ -141,17 +169,21 @@ export function OrdersTable({
                   onClick={() => onOpen(order.id)}
                   className={`cursor-pointer border-b border-line last:border-0 hover:bg-wash ${order.voidedAt ? 'opacity-50' : ''}`}
                 >
-                  <td className="px-3 py-2.5 font-mono font-medium">{order.code}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 font-mono font-medium">{order.code}</td>
                   <td className="max-w-[12rem] truncate px-3 py-2.5">{customerName}</td>
                   <td className="max-w-[11rem] truncate px-3 py-2.5 text-ink-muted">{order.serviceNameSnapshot}</td>
                   <td className="px-3 py-2.5 text-right font-mono">{order.kilos}</td>
                   <td className="px-3 py-2.5 text-right font-mono font-medium">{formatCentavos(order.totalCentavos)}</td>
                   <td className="px-3 py-2.5">
-                    <span className={`rounded-pill px-2 py-0.5 text-xs font-semibold ${payToneClass(pStatus)}`}>
+                    <span
+                      className={`text-xs font-semibold ${
+                        pStatus === 'paid' ? 'text-ink-muted' : payToneClass(pStatus)
+                      }`}
+                    >
                       {t(`pay.${pStatus}` as 'pay.unpaid')}
                     </span>
                   </td>
-                  <td className={`whitespace-nowrap px-3 py-2.5 text-xs ${overdue ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}>
+                  <td className={`whitespace-nowrap px-3 py-2.5 text-xs ${overdue ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
                     {fmtDate(order.promisedAt)}
                   </td>
                   <td className="px-3 py-2.5">
@@ -159,7 +191,9 @@ export function OrdersTable({
                       <span className="text-xs font-bold text-danger-700">{t('orders.voidedBadge')}</span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
-                        <StatusBadge status={order.status} />
+                        <span style={{ color: STATUS_VAR[order.status] }}>
+                          <StageIcon status={order.status} size={17} />
+                        </span>
                         <span className="whitespace-nowrap text-xs text-ink-muted">
                           {statusLabel(order.status)}
                         </span>
@@ -204,14 +238,16 @@ export function OrdersTable({
                   <span className="text-xs font-bold text-danger-700">{t('orders.voidedBadge')}</span>
                 ) : (
                   <span className="inline-flex items-center gap-2">
-                    <StatusBadge status={order.status} />
+                    <span style={{ color: STATUS_VAR[order.status] }}>
+                      <StageIcon status={order.status} size={17} />
+                    </span>
                     <span className="text-xs text-ink-muted">{statusLabel(order.status)}</span>
                   </span>
                 )}
                 {!order.voidedAt && <NextButton status={order.status} onAdvance={(to) => onAdvance(order, to)} />}
               </div>
               <div className="mt-1 truncate text-xs text-ink-muted">{order.serviceNameSnapshot}</div>
-              <div className={`text-xs ${overdue ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}>
+              <div className={`text-xs ${overdue ? 'font-semibold text-danger-700' : 'text-ink-muted'}`}>
                 {order.kilos} {t('orders.kg')} · {t('orders.readyBy')}: {fmtDate(order.promisedAt)}
               </div>
             </div>

@@ -159,14 +159,42 @@ export function EmptyState({ children }: { children: ReactNode }) {
 
 // ── Stat figure (mono, large) ─────────────────────────────────────
 
-export function Stat({ label, value, tone }: { label: string; value: string; tone?: 'danger' | 'accent' | 'sun' }) {
+export function Stat({
+  label,
+  value,
+  hint,
+  tone,
+  onClick,
+}: {
+  label: string
+  value: string
+  hint?: string
+  tone?: 'danger' | 'accent' | 'sun'
+  /** Present = the tile is a control and gets a chevron. */
+  onClick?: () => void
+}) {
   const toneClass =
     tone === 'danger' ? 'text-danger-700' : tone === 'accent' ? 'text-accent-700' : tone === 'sun' ? 'text-sun-700' : 'text-ink'
-  return (
-    <div className="rounded-card border border-line bg-surface p-3">
-      <div className="label-caps">{label}</div>
+  const body = (
+    <>
+      <div className="flex items-start justify-between gap-2">
+        <span className="label-caps">{label}</span>
+        {onClick && <span className="text-ink-muted" aria-hidden>›</span>}
+      </div>
       <div className={`mt-0.5 font-mono text-lg font-medium ${toneClass}`}>{value}</div>
-    </div>
+      {hint && <div className="mt-0.5 truncate text-xs text-ink-muted">{hint}</div>}
+    </>
+  )
+  if (!onClick) {
+    return <div className="rounded-card border border-line bg-surface p-3">{body}</div>
+  }
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-card border border-line bg-surface p-3 text-left transition-colors duration-150 hover:border-ink-muted/40"
+    >
+      {body}
+    </button>
   )
 }
 
