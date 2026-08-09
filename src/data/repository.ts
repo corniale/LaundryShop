@@ -21,7 +21,7 @@ import type {
   PaymentMethod,
   InventoryUnit,
 } from './types'
-import { canTransition, isBackward } from '../domain/status'
+import { canTransition, isBackward, statusIndex, STATUS_ORDER } from '../domain/status'
 import { buildReversal } from '../domain/payments'
 import { recountDelta } from '../domain/inventory'
 
@@ -291,7 +291,15 @@ export async function updateOrder(id: string, patch: Partial<Order>, byUserId: s
   await audit(byUserId, 'update', 'order', id, `Edited order ${o?.code ?? id}`)
 }
 
-export async function advanceOrderStatus(
+/**
+ * Move an order to any stage, writing complete history.
+ *
+ * Forward skips write one StatusEvent per intermediate stage (all with
+ * the same timestamp) so reports never see a gap. Backward moves append
+ * a single entry flagged `reverted` — forward entries are never deleted.
+ * Nothing here ever advances on a timer; a human confirmed each move.
+ */
+export async function setOrderStatus(
   orderId: string,
   to: OrderStatus,
   byUserId: string,
@@ -300,29 +308,68 @@ export async function advanceOrderStatus(
   await db.transaction('rw', [db.orders, db.statusEvents, db.auditEntries], async () => {
     const order = await db.orders.get(orderId)
     if (!order || order.voidedAt) throw new Error('Order not found or voided')
-    if (!canTransition(order.status, to)) throw new Error(`Cannot move ${order.status} → ${to}`)
-    if (isBackward(order.status, to) && !reason) throw new Error('Backward moves need a reason')
+    const fromIndex = statusIndex(order.status)
+    const toIndex = statusIndex(to)
+    if (fromIndex === toIndex) return
 
     const at = now()
+    const backward = toIndex < fromIndex
     const patch: Partial<Order> = { status: to, updatedAt: at }
-    if (to === 'ready' && !order.readyAt) patch.readyAt = at
+    if (toIndex >= statusIndex('ready') && !order.readyAt) patch.readyAt = at
     if (to === 'claimed') patch.claimedAt = at
-    if (isBackward(order.status, to)) {
+    if (backward) {
       if (to !== 'claimed') patch.claimedAt = undefined
-      if (['received', 'washing', 'drying'].includes(to)) patch.readyAt = undefined
+      if (toIndex < statusIndex('ready')) patch.readyAt = undefined
     }
     await db.orders.update(orderId, patch)
-    await db.statusEvents.add({
-      id: ulid(),
-      orderId,
-      from: order.status,
-      to,
-      at,
+
+    if (backward) {
+      await db.statusEvents.add({
+        id: ulid(),
+        orderId,
+        from: order.status,
+        to,
+        at,
+        byUserId,
+        reason,
+        reverted: true,
+      })
+    } else {
+      // one entry per stage crossed, so a skip leaves no hole in history
+      for (let i = fromIndex + 1; i <= toIndex; i++) {
+        await db.statusEvents.add({
+          id: ulid(),
+          orderId,
+          from: STATUS_ORDER[i - 1],
+          to: STATUS_ORDER[i],
+          at,
+          byUserId,
+          reason,
+        })
+      }
+    }
+    await audit(
       byUserId,
-      reason,
-    })
-    await audit(byUserId, 'status', 'order', orderId, `${order.code}: ${order.status} → ${to}${reason ? ` (${reason})` : ''}`)
+      'status',
+      'order',
+      orderId,
+      `${order.code}: ${order.status} → ${to}${backward ? ' (moved back)' : ''}${reason ? ` (${reason})` : ''}`,
+    )
   })
+}
+
+/** One-step move used by the list and board; validates the transition. */
+export async function advanceOrderStatus(
+  orderId: string,
+  to: OrderStatus,
+  byUserId: string,
+  reason?: string,
+): Promise<void> {
+  const order = await db.orders.get(orderId)
+  if (!order) throw new Error('Order not found')
+  if (!canTransition(order.status, to)) throw new Error(`Cannot move ${order.status} → ${to}`)
+  if (isBackward(order.status, to) && !reason) throw new Error('Backward moves need a reason')
+  await setOrderStatus(orderId, to, byUserId, reason)
 }
 
 export async function voidOrder(orderId: string, reason: string, byUserId: string): Promise<void> {

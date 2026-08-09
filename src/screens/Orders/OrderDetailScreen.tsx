@@ -1,7 +1,7 @@
 /**
  * Order detail — timeline of status events and payments (who + when),
- * edit window rules, void with reason, backward moves with reason,
- * reprint stub, take payment.
+ * edit window rules, void with reason, reprint stub, take payment.
+ * Status changes happen on the rail (see components/StatusRail).
  */
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -11,9 +11,8 @@ import type { PaymentMethod } from '../../data/types'
 import { t } from '../../i18n/strings'
 import { formatCentavos, parsePesosInput } from '../../domain/money'
 import { paidCentavos, balanceCentavos, paymentStatus } from '../../domain/payments'
-import { prevStatus } from '../../domain/status'
 import {
-  advanceOrderStatus,
+  setOrderStatus,
   voidOrder,
   recordPayment,
   reversePayment,
@@ -21,7 +20,8 @@ import {
 } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
-import { WashLine, statusLabel } from '../../components/WashLine'
+import { statusLabel } from '../../components/WashLine'
+import { StatusRail } from '../../components/StatusRail'
 import { Card, Button, Sheet, Field, Input, Chip, TextArea } from '../../components/ui'
 import { fmtDateTime, fmtDateFull } from '../../app/format'
 import { StubActions, buildReadyMessage, sendReadyMessage } from '../../components/Stub'
@@ -53,8 +53,6 @@ export function OrderDetailScreen() {
   const [confirmOverpay, setConfirmOverpay] = useState(false)
   const [voidOpen, setVoidOpen] = useState(false)
   const [voidReason, setVoidReason] = useState('')
-  const [backOpen, setBackOpen] = useState(false)
-  const [backReason, setBackReason] = useState('')
   const [reverseTarget, setReverseTarget] = useState<string | null>(null)
   const [reverseReason, setReverseReason] = useState('')
   const [editOpen, setEditOpen] = useState(false)
@@ -75,10 +73,19 @@ export function OrderDetailScreen() {
     (currentUser?.id === order.createdBy &&
       Date.now() - new Date(order.receivedAt).getTime() < clientConfig.staffEditWindowMinutes * 60_000)
 
-  async function advance(to: NonNullable<typeof order>['status']) {
-    if (!currentUser || !order) return
-    await advanceOrderStatus(order.id, to, currentUser.id)
-    toast({ message: t('orders.advanced', { code: order.code, status: statusLabel(to) }) })
+  // Optimistic: the rail renders the move at once and rolls back if the
+  // write fails. A deleted order discards the write without an error.
+  async function changeStatus(to: NonNullable<typeof order>['status']): Promise<boolean> {
+    if (!currentUser || !order) return false
+    try {
+      await setOrderStatus(order.id, to, currentUser.id)
+      toast({ message: t('orders.advanced', { code: order.code, status: statusLabel(to) }) })
+      return true
+    } catch {
+      const stillThere = await db.orders.get(order.id)
+      if (!stillThere) return true // order vanished mid-transition: drop it quietly
+      return false
+    }
   }
 
   async function submitPayment() {
@@ -100,8 +107,6 @@ export function OrderDetailScreen() {
     if (!shop || !order) return
     await sendReadyMessage(buildReadyMessage(shop, order, payments, customerName), customer?.contact)
   }
-
-  const back = prevStatus(order.status)
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -177,8 +182,8 @@ export function OrderDetailScreen() {
       </Card>
 
       {!order.voidedAt && (
-        <Card>
-          <WashLine status={order.status} onAdvance={(to) => void advance(to)} />
+        <Card className="!p-4">
+          <StatusRail status={order.status} onChange={changeStatus} />
         </Card>
       )}
 
@@ -207,11 +212,6 @@ export function OrderDetailScreen() {
               }}
             >
               {t('orders.edit')}
-            </Button>
-          )}
-          {back && isOwner && (
-            <Button variant="secondary" onClick={() => setBackOpen(true)}>
-              {t('orders.moveBack')}
             </Button>
           )}
           {isOwner && (
@@ -325,26 +325,6 @@ export function OrderDetailScreen() {
             }}
           >
             {t('orders.void')}
-          </Button>
-        </div>
-      </Sheet>
-
-      {/* Move back sheet */}
-      <Sheet open={backOpen} onClose={() => setBackOpen(false)} title={t('orders.moveBack')}>
-        <div className="flex flex-col gap-3">
-          <Field label={t('orders.moveBackReason')}>
-            <TextArea value={backReason} onChange={(e) => setBackReason(e.target.value)} />
-          </Field>
-          <Button
-            disabled={!backReason.trim() || !back}
-            onClick={async () => {
-              if (!currentUser || !back) return
-              await advanceOrderStatus(order.id, back, currentUser.id, backReason.trim())
-              setBackOpen(false)
-              setBackReason('')
-            }}
-          >
-            {back ? statusLabel(back) : ''}
           </Button>
         </div>
       </Sheet>

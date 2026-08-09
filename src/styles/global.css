@@ -101,6 +101,28 @@ a:focus-visible,
   transition: background-color 220ms ease-out, flex-grow 220ms ease-out;
 }
 
+/* Status rail motion — only the current node, never in lists */
+@keyframes rail-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes rail-sway {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+.rail-anim-rail-spin {
+  animation: rail-spin 3s linear infinite;
+}
+.rail-anim-rail-sway {
+  animation: rail-sway 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -102,6 +102,12 @@ export interface Order {
   updatedAt: string
 }
 
+/**
+ * Append-only status history: one entry per transition, never deleted.
+ * A backward move appends an entry with reverted: true rather than
+ * removing the forward one, so "when did this first hit Ready?" stays
+ * answerable months later.
+ */
 export interface StatusEvent {
   id: string
   orderId: string
@@ -110,6 +116,7 @@ export interface StatusEvent {
   at: string
   byUserId: string
   reason?: string
+  reverted?: boolean
   demo?: boolean
 }
 

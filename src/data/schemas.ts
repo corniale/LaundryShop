@@ -104,6 +104,7 @@ export const statusEventSchema = z.object({
   at: iso,
   byUserId: z.string(),
   reason: z.string().optional(),
+  reverted: z.boolean().optional(),
   demo: z.boolean().optional(),
 })
 
