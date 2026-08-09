@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
-import { validateBackupJson } from './validate'
+import { validateBackupJson, migrateBackup } from './validate'
 import { sha256Hex } from './serialize'
 import { SCHEMA_VERSION } from '../data/db'
 
@@ -29,7 +29,12 @@ async function makeBackup(schemaVersion = SCHEMA_VERSION) {
     payments: [],
     inventoryItems: [],
     inventoryMoves: [],
-    expectedUseRules: [],
+    // v1 stored a per-kilo rate and nothing else; v2 stores a quantity and a basis.
+    expectedUseRules: [
+      schemaVersion === 1
+        ? { id: 'r1', serviceId: 'sv1', itemId: 'i1', qtyPerKg: 0.02, updatedAt: now }
+        : { id: 'r1', serviceId: 'sv1', itemId: 'i1', qtyPer: 0.5, basis: 'piece' as const, updatedAt: now },
+    ],
     auditEntries: [],
   }
   return {
@@ -75,5 +80,30 @@ describe('backup validation', () => {
 
     const notJson = await validateBackupJson('not json at all')
     expect(notJson.ok).toBe(false)
+  })
+})
+
+describe('schema migration', () => {
+  it('reads v1 expected-use rules as per kilo (v1 → v2)', async () => {
+    const result = await validateBackupJson(JSON.stringify(await makeBackup(1)))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const { backup, notes } = migrateBackup(result.backup)
+    const rule = backup.data.expectedUseRules[0]
+    expect(rule.qtyPer).toBe(0.02)
+    expect(rule.basis).toBe('kg')
+    expect(rule.qtyPerKg).toBeUndefined()
+    expect(backup.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(notes.join(' ')).toMatch(/per kilo/i)
+  })
+
+  it('leaves a current-version backup alone', async () => {
+    const result = await validateBackupJson(JSON.stringify(await makeBackup()))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const { backup, notes } = migrateBackup(result.backup)
+    expect(notes).toEqual([])
+    expect(backup.data.expectedUseRules[0].basis).toBe('piece')
   })
 })

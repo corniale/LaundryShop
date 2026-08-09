@@ -38,18 +38,26 @@ export async function validateBackupJson(text: string): Promise<ValidationResult
 
 /**
  * Migrate an older backup's data forward to the current schema.
- * v1 is the first schema, so this is currently the identity — the switch
- * is the pattern later versions extend (see README: bumping schemaVersion).
+ * Each case moves one version forward; see README on bumping schemaVersion.
  */
 export function migrateBackup(backup: BackupFile): { backup: BackupFile; notes: string[] } {
   const notes: string[] = []
   let version = backup.schemaVersion
   while (version < SCHEMA_VERSION) {
     switch (version) {
-      // case 1:  // v1 → v2 example:
-      //   backup.data.orders.forEach(o => { o.newField = defaultValue })
-      //   notes.push('Added newField to orders')
-      //   break
+      case 1: {
+        // v1 rules were per kilo and nothing else, so that is what they stay.
+        let touched = 0
+        for (const rule of backup.data.expectedUseRules) {
+          if (rule.qtyPer !== undefined) continue
+          rule.qtyPer = rule.qtyPerKg ?? 0
+          rule.basis = 'kg'
+          delete rule.qtyPerKg
+          touched++
+        }
+        if (touched > 0) notes.push(`Expected-use rules read as per kilo (${touched})`)
+        break
+      }
       default:
         break
     }

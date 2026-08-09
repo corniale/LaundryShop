@@ -4,7 +4,10 @@ export type OrderStatus = 'received' | 'washing' | 'drying' | 'ready' | 'claimed
 export type PaymentMethod = 'cash' | 'gcash' | 'maya' | 'bank' | 'other'
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid'
 export type Role = 'owner' | 'staff'
-export type InventoryUnit = 'kg' | 'L' | 'pc' | 'pack'
+export type InventoryUnit = 'kg' | 'g' | 'L' | 'mL' | 'pc' | 'pack'
+
+/** What an expected-use rule is measured against: kilos, pieces, or the order itself. */
+export type UseBasis = 'kg' | 'piece' | 'order'
 export type InventoryMoveType = 'in' | 'out' | 'adjust' | 'auto'
 export type BackupKind = 'auto' | 'manual' | 'handover'
 export type BackupDestination = 'folder' | 'share' | 'download' | 'snapshot'
@@ -168,7 +171,11 @@ export interface ExpectedUseRule {
   id: string
   serviceId: string
   itemId: string
-  qtyPerKg: number
+  /** Quantity in the item's own unit, per one unit of the basis. */
+  qtyPer: number
+  basis: UseBasis
+  /** v1 field, read only while migrating an old backup. */
+  qtyPerKg?: number
   demo?: boolean
   updatedAt: string
 }
