@@ -90,6 +90,16 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   },
 )
 
+/** Same shell as Input, so a dropdown does not look like a foreign control. */
+export function Select({ className = '', ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={`min-h-touch w-full rounded-input border border-line bg-surface px-3 py-2.5 text-base text-ink ${className}`}
+      {...props}
+    />
+  )
+}
+
 export function TextArea({ className = '', ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea

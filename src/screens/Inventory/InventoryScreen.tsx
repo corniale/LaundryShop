@@ -1,14 +1,26 @@
 /**
  * Inventory — stock on hand, human-recorded moves only. Expected-use rules
  * are reporting only and NEVER touch quantities.
+ *
+ * Stock and usage share one table because they describe the same thing: what
+ * is left, what left the shelf over the chosen period, and what that cost.
+ * Splitting them into two stacked lists of the same items made the reader
+ * match up names by eye.
  */
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { format, startOfDay, endOfDay, subDays } from 'date-fns'
 import { db } from '../../data/db'
 import type { InventoryItem, InventoryUnit } from '../../data/types'
 import { t } from '../../i18n/strings'
 import { formatCentavos, parsePesosInput } from '../../domain/money'
-import { runningBalances, compareUsage, isLowStock } from '../../domain/inventory'
+import {
+  runningBalances,
+  compareUsage,
+  isLowStock,
+  latestUnitCostCentavos,
+  usageCostCentavos,
+} from '../../domain/inventory'
 import {
   saveInventoryItem,
   recordStockMove,
@@ -18,10 +30,23 @@ import {
 } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
-import { Card, Button, Sheet, Field, Input, Chip, EmptyState } from '../../components/ui'
-import { fmtDateTime, monthRange, inRange } from '../../app/format'
+import { Card, Button, Sheet, Field, Input, Select, Chip } from '../../components/ui'
+import { DataTable, type Column } from '../../components/DataTable'
+import { fmtDateTime, todayRange, weekRange, monthRange, inRange } from '../../app/format'
 
 const UNITS: InventoryUnit[] = ['kg', 'L', 'pc', 'pack']
+type Preset = 'today' | 'week' | 'month' | 'custom'
+
+interface UsageRow {
+  item: InventoryItem
+  used: number
+  restocked: number
+  spendCentavos: number
+  costOfUseCentavos: number | null
+  expected: number | null
+  variancePct: number | null
+  flagged: boolean
+}
 
 export function InventoryScreen() {
   const toast = useToast()
@@ -32,6 +57,9 @@ export function InventoryScreen() {
   const services = useLiveQuery(() => db.services.toArray(), []) ?? []
   const rules = useLiveQuery(() => db.expectedUseRules.toArray(), []) ?? []
 
+  const [preset, setPreset] = useState<Preset>('month')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
   const [detail, setDetail] = useState<InventoryItem | null>(null)
   const [moveOpen, setMoveOpen] = useState<'in' | 'out' | 'recount' | null>(null)
   const [moveForm, setMoveForm] = useState({ qty: '', cost: '', supplier: '', reason: '' })
@@ -43,23 +71,39 @@ export function InventoryScreen() {
 
   const detailLive = items.find((i) => i.id === detail?.id) ?? detail
 
+  const range = useMemo(() => {
+    if (preset === 'today') return todayRange()
+    if (preset === 'week') return weekRange()
+    if (preset === 'month') return monthRange()
+    return {
+      from: customFrom ? startOfDay(new Date(customFrom)) : startOfDay(subDays(new Date(), 30)),
+      to: customTo ? endOfDay(new Date(customTo)) : endOfDay(new Date()),
+    }
+  }, [preset, customFrom, customTo])
+
   const detailMoves = useMemo(
     () => (detailLive ? moves.filter((m) => m.itemId === detailLive.id).sort((a, b) => a.at.localeCompare(b.at)) : []),
     [moves, detailLive],
   )
   const detailBalances = useMemo(() => runningBalances(detailMoves), [detailMoves])
 
-  // ── Monthly usage report ──
-  const { from, to } = monthRange()
-  const usageReport = useMemo(() => {
+  /**
+   * Usage over the chosen period. `used` counts only the stock-outs a person
+   * recorded; `expected` is derived from the kilos washed under each rule and
+   * is never written anywhere. `costOfUse` prices the consumed stock at the
+   * last amount paid for it.
+   */
+  const rows: UsageRow[] = useMemo(() => {
+    const { from, to } = range
     return items.map((item) => {
-      const monthOut = moves
-        .filter((m) => m.itemId === item.id && m.type === 'out' && inRange(m.at, from, to))
-        .reduce((s, m) => s + m.qty, 0)
-      const monthInCost = moves
-        .filter((m) => m.itemId === item.id && m.type === 'in' && inRange(m.at, from, to))
+      const mine = moves.filter((m) => m.itemId === item.id)
+      const inRangeMoves = mine.filter((m) => inRange(m.at, from, to))
+      const used = inRangeMoves.filter((m) => m.type === 'out').reduce((s, m) => s + m.qty, 0)
+      const restocked = inRangeMoves.filter((m) => m.type === 'in').reduce((s, m) => s + m.qty, 0)
+      const spendCentavos = inRangeMoves
+        .filter((m) => m.type === 'in')
         .reduce((s, m) => s + m.qty * (m.unitCostCentavos ?? 0), 0)
-      // expected-use comparison — reporting only
+
       const itemRules = rules.filter((r) => r.itemId === item.id)
       let expected: number | null = null
       if (itemRules.length > 0) {
@@ -71,10 +115,21 @@ export function InventoryScreen() {
           expected += kilos * rule.qtyPerKg
         }
       }
-      const comparison = expected !== null ? compareUsage(1, expected, monthOut) : null
-      return { item, monthOut, monthInCost, expected, comparison }
+      // One bucket of expected quantity already summed, so the per-kilo rate is it.
+      const comparison = expected !== null ? compareUsage(1, expected, used) : null
+
+      return {
+        item,
+        used,
+        restocked,
+        spendCentavos: Math.round(spendCentavos),
+        costOfUseCentavos: usageCostCentavos(used, latestUnitCostCentavos(mine) ?? item.costPerUnitCentavos ?? null),
+        expected,
+        variancePct: comparison?.variancePct ?? null,
+        flagged: comparison?.flagged ?? false,
+      }
     })
-  }, [items, moves, rules, orders, from, to])
+  }, [items, moves, rules, orders, range])
 
   async function submitMove() {
     if (!currentUser || !detailLive || !moveOpen) return
@@ -113,6 +168,133 @@ export function InventoryScreen() {
     setItemFormOpen(false)
   }
 
+  function openRulesFor(itemId: string) {
+    setRuleForm({ serviceId: '', itemId, qtyPerKg: '' })
+    setRuleOpen(true)
+  }
+
+  const stockColumns: Array<Column<UsageRow>> = [
+    {
+      key: 'name',
+      header: t('inventory.item'),
+      sortValue: (r) => r.item.name.toLowerCase(),
+      defaultDesc: false,
+      render: (r) => <span className="font-medium">{r.item.name}</span>,
+    },
+    {
+      key: 'onHand',
+      header: t('inventory.onHand'),
+      align: 'right',
+      // Low stock is about the gap to the reorder point, not the raw number,
+      // so sorting here puts what needs buying at the top.
+      sortValue: (r) => r.item.currentQty - r.item.reorderPoint,
+      defaultDesc: false,
+      render: (r) => {
+        const low = isLowStock(r.item.currentQty, r.item.reorderPoint)
+        return (
+          <span className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+            {low && (
+              <span className="rounded-pill bg-danger-500/10 px-2 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-danger-700">
+                {t('inventory.lowStock')}
+              </span>
+            )}
+            <span className={`font-mono font-medium ${low ? 'text-danger-700' : ''}`}>
+              {r.item.currentQty} {r.item.unit}
+            </span>
+          </span>
+        )
+      },
+    },
+    {
+      key: 'reorder',
+      header: t('inventory.reorderPoint'),
+      align: 'right',
+      sortValue: (r) => r.item.reorderPoint,
+      render: (r) => (
+        <span className="whitespace-nowrap font-mono text-ink-muted">
+          {r.item.reorderPoint} {r.item.unit}
+        </span>
+      ),
+    },
+  ]
+
+  const usageColumns: Array<Column<UsageRow>> = [
+    {
+      key: 'used',
+      header: t('inventory.used'),
+      align: 'right',
+      sortValue: (r) => r.used,
+      render: (r) => (
+        <span className="whitespace-nowrap font-mono">
+          {r.used.toFixed(1)} {r.item.unit}
+        </span>
+      ),
+    },
+    {
+      key: 'expected',
+      header: t('inventory.expected'),
+      align: 'right',
+      sortValue: (r) => r.expected ?? -1,
+      render: (r) =>
+        r.expected === null ? (
+          <button
+            className="text-xs text-primary-600 underline underline-offset-2"
+            onClick={(e) => {
+              e.stopPropagation()
+              openRulesFor(r.item.id)
+            }}
+          >
+            {t('inventory.noRule')}
+          </button>
+        ) : (
+          <span className="whitespace-nowrap font-mono text-ink-muted">
+            {r.expected.toFixed(1)} {r.item.unit}
+          </span>
+        ),
+    },
+    {
+      key: 'variance',
+      header: t('inventory.variance'),
+      align: 'right',
+      sortValue: (r) => (r.variancePct === null ? 0 : Math.abs(r.variancePct)),
+      render: (r) =>
+        r.variancePct === null ? (
+          <span className="text-xs text-ink-muted">—</span>
+        ) : (
+          <span
+            className={`whitespace-nowrap font-mono ${r.flagged ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}
+            title={r.flagged ? t('inventory.varianceFlag') : undefined}
+          >
+            {r.variancePct >= 0 ? '+' : ''}
+            {r.variancePct.toFixed(0)}%
+          </span>
+        ),
+    },
+    {
+      key: 'costOfUse',
+      header: t('inventory.costOfUse'),
+      align: 'right',
+      sortValue: (r) => r.costOfUseCentavos ?? -1,
+      render: (r) =>
+        r.costOfUseCentavos === null ? (
+          <span className="text-xs text-ink-muted">{t('inventory.noPrice')}</span>
+        ) : (
+          <span className="font-mono">{formatCentavos(r.costOfUseCentavos)}</span>
+        ),
+    },
+    {
+      key: 'spend',
+      header: t('inventory.spend'),
+      align: 'right',
+      sortValue: (r) => r.spendCentavos,
+      render: (r) => (
+        <span className="font-mono text-ink-muted">
+          {r.restocked > 0 || r.spendCentavos > 0 ? formatCentavos(r.spendCentavos) : '—'}
+        </span>
+      ),
+    },
+  ]
+
   return (
     <div className="flex flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
@@ -131,75 +313,90 @@ export function InventoryScreen() {
         )}
       </div>
 
-      {items.length === 0 ? (
-        <EmptyState>{t('inventory.empty')}</EmptyState>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {items.map((item) => {
-            const low = isLowStock(item.currentQty, item.reorderPoint)
-            const pct = Math.min(100, (item.currentQty / Math.max(item.reorderPoint * 3, 1)) * 100)
-            return (
-              <Card key={item.id} onClick={() => setDetail(item)}>
-                <div className="flex items-baseline justify-between">
-                  <span className="font-semibold">{item.name}</span>
-                  <span className={`font-mono font-medium ${low ? 'text-danger-700' : ''}`}>
-                    {item.currentQty} {item.unit}
-                    {low && (
-                      <span className="ml-2 rounded-pill bg-danger-500/10 px-2 py-0.5 text-xs font-semibold text-danger-700">
-                        {t('inventory.lowStock')}
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-pill bg-wash-deep">
-                  <div
-                    className="h-full rounded-pill"
-                    style={{
-                      width: `${pct}%`,
-                      backgroundColor: low ? 'var(--danger-500)' : 'var(--accent-500)',
-                    }}
-                  />
-                </div>
-                <div className="mt-1 text-xs text-ink-muted">
-                  {t('inventory.reorderPoint')}: {item.reorderPoint} {item.unit}
-                </div>
-              </Card>
-            )
-          })}
-        </div>
+      {/* The period governs every usage figure in the table */}
+      {isOwner && (
+        <>
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
+            {(['today', 'week', 'month', 'custom'] as const).map((p) => (
+              <Chip key={p} selected={preset === p} onClick={() => setPreset(p)}>
+                {t(`reports.preset.${p}` as 'reports.preset.today')}
+              </Chip>
+            ))}
+          </div>
+          {preset === 'custom' && (
+            <div className="flex gap-2">
+              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+            </div>
+          )}
+          <div className="font-mono text-xs text-ink-muted">
+            {format(range.from, 'MMM d, yyyy')} – {format(range.to, 'MMM d, yyyy')}
+          </div>
+        </>
       )}
 
-      {/* Usage & cost report */}
+      <DataTable
+        rows={rows}
+        columns={isOwner ? [...stockColumns, ...usageColumns] : stockColumns}
+        getRowKey={(r) => r.item.id}
+        initialSortKey="onHand"
+        initialSortDesc={false}
+        onRowClick={(r) => setDetail(r.item)}
+        emptyText={t('inventory.empty')}
+        renderCard={(r) => {
+          const low = isLowStock(r.item.currentQty, r.item.reorderPoint)
+          const pct = Math.min(100, (r.item.currentQty / Math.max(r.item.reorderPoint * 3, 1)) * 100)
+          return (
+            <>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-medium">{r.item.name}</span>
+                <span className={`whitespace-nowrap font-mono font-medium ${low ? 'text-danger-700' : ''}`}>
+                  {r.item.currentQty} {r.item.unit}
+                  {low && (
+                    <span className="ml-2 rounded-pill bg-danger-500/10 px-2 py-0.5 text-xs font-semibold text-danger-700">
+                      {t('inventory.lowStock')}
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-pill bg-wash-deep">
+                <div
+                  className="h-full rounded-pill"
+                  style={{ width: `${pct}%`, backgroundColor: low ? 'var(--danger-500)' : 'var(--accent-500)' }}
+                />
+              </div>
+              <div className="mt-1 text-xs text-ink-muted">
+                {t('inventory.reorderPoint')}: {r.item.reorderPoint} {r.item.unit}
+                {isOwner && (
+                  <>
+                    {' · '}
+                    {t('inventory.used')} {r.used.toFixed(1)} {r.item.unit}
+                    {r.costOfUseCentavos !== null ? ` · ${formatCentavos(r.costOfUseCentavos)}` : ''}
+                    {r.flagged && r.variancePct !== null ? (
+                      <span className="font-semibold text-sun-700">
+                        {' · '}
+                        {r.variancePct >= 0 ? '+' : ''}
+                        {r.variancePct.toFixed(0)}%
+                      </span>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            </>
+          )
+        }}
+      />
+
       {isOwner && items.length > 0 && (
         <Card>
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-1 flex items-center justify-between gap-2">
             <h2 className="font-display text-base font-semibold">{t('inventory.usageReport')}</h2>
             <Button variant="ghost" className="!py-1.5 text-sm" onClick={() => setRuleOpen(true)}>
               {t('inventory.rules')}
             </Button>
           </div>
-          <div className="flex flex-col gap-2 text-sm">
-            {usageReport.map(({ item, monthOut, monthInCost, expected, comparison }) => (
-              <div key={item.id} className="border-b border-line pb-2 last:border-0">
-                <div className="flex justify-between">
-                  <span className="font-medium">{item.name}</span>
-                  <span className="font-mono">
-                    {monthOut.toFixed(1)} {item.unit} · {formatCentavos(monthInCost)}
-                  </span>
-                </div>
-                {expected !== null && comparison && (
-                  <div className={`text-xs ${comparison.flagged ? 'font-semibold text-sun-700' : 'text-ink-muted'}`}>
-                    {t('inventory.expected')}: ~{expected.toFixed(1)} {item.unit} · {t('inventory.actual')}: {monthOut.toFixed(1)}{' '}
-                    {item.unit}
-                    {comparison.variancePct !== null &&
-                      ` (${comparison.variancePct >= 0 ? '+' : ''}${comparison.variancePct.toFixed(0)}%)`}
-                    {comparison.flagged && ` — ${t('inventory.varianceFlag')}`}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-ink-muted">{t('inventory.expectedNote')}</p>
+          <p className="text-xs text-ink-muted">{t('inventory.usageIntro')}</p>
+          <p className="mt-1 text-xs text-ink-muted">{t('inventory.costBasis')}</p>
         </Card>
       )}
 
@@ -344,46 +541,56 @@ export function InventoryScreen() {
       <Sheet open={ruleOpen} onClose={() => setRuleOpen(false)} title={t('inventory.rules')}>
         <div className="flex flex-col gap-3">
           <p className="text-sm text-ink-muted">{t('inventory.expectedNote')}</p>
-          {rules.map((r) => (
-            <div key={r.id} className="flex items-center justify-between rounded-input bg-surface p-3 shadow-card">
-              <span className="text-sm">
-                {services.find((s) => s.id === r.serviceId)?.name} → {items.find((i) => i.id === r.itemId)?.name}
-                <span className="ml-2 font-mono">{r.qtyPerKg}/kg</span>
-              </span>
-              <button
-                className="min-h-touch min-w-touch text-danger-700"
-                aria-label={t('common.delete')}
-                onClick={() => currentUser && void deleteExpectedUseRule(r.id, currentUser.id)}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          <div className="flex flex-col gap-2 rounded-card bg-wash-deep p-3">
-            <select
-              className="min-h-touch rounded-input border border-line bg-surface px-3"
-              value={ruleForm.serviceId}
-              onChange={(e) => setRuleForm((f) => ({ ...f, serviceId: e.target.value }))}
-            >
-              <option value="">{t('orders.service')}…</option>
-              {services.filter((s) => s.active).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            <select
-              className="min-h-touch rounded-input border border-line bg-surface px-3"
-              value={ruleForm.itemId}
-              onChange={(e) => setRuleForm((f) => ({ ...f, itemId: e.target.value }))}
-            >
-              <option value="">{t('inventory.name')}…</option>
-              {items.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
+
+          <div>
+            <div className="label-caps mb-1">{t('inventory.ruleExisting')}</div>
+            {rules.length === 0 ? (
+              <p className="text-sm text-ink-muted">{t('inventory.ruleNone')}</p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {rules.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 border-b border-line py-1.5 last:border-0">
+                    <span className="min-w-0 text-sm">
+                      {services.find((s) => s.id === r.serviceId)?.name} → {items.find((i) => i.id === r.itemId)?.name}
+                      <span className="ml-2 font-mono">{r.qtyPerKg}/kg</span>
+                    </span>
+                    <button
+                      className="min-h-touch min-w-touch shrink-0 text-danger-700"
+                      aria-label={t('common.delete')}
+                      onClick={() => currentUser && void deleteExpectedUseRule(r.id, currentUser.id)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-card bg-wash-deep p-3">
+            <div className="label-caps">{t('inventory.ruleAdd')}</div>
+            <Field label={t('orders.service')}>
+              <Select value={ruleForm.serviceId} onChange={(e) => setRuleForm((f) => ({ ...f, serviceId: e.target.value }))}>
+                <option value="">—</option>
+                {services
+                  .filter((s) => s.active)
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+              </Select>
+            </Field>
+            <Field label={t('inventory.item')}>
+              <Select value={ruleForm.itemId} onChange={(e) => setRuleForm((f) => ({ ...f, itemId: e.target.value }))}>
+                <option value="">—</option>
+                {items.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
             <Field label={t('inventory.qtyPerKg')}>
               <Input
                 inputMode="decimal"
@@ -404,7 +611,7 @@ export function InventoryScreen() {
                   { serviceId: ruleForm.serviceId, itemId: ruleForm.itemId, qtyPerKg: Number(ruleForm.qtyPerKg) },
                   currentUser.id,
                 )
-                setRuleForm({ serviceId: '', itemId: '', qtyPerKg: '' })
+                setRuleForm((f) => ({ serviceId: '', itemId: f.itemId, qtyPerKg: '' }))
               }}
             >
               {t('common.add')}

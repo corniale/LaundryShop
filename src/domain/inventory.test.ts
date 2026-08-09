@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { moveDelta, recountDelta, runningBalances, compareUsage, isLowStock } from './inventory'
+import {
+  moveDelta,
+  recountDelta,
+  runningBalances,
+  compareUsage,
+  isLowStock,
+  latestUnitCostCentavos,
+  usageCostCentavos,
+} from './inventory'
 import type { InventoryMove } from '../data/types'
 
 const move = (type: InventoryMove['type'], qty: number): InventoryMove => ({
@@ -54,5 +62,35 @@ describe('expected vs actual (reporting only, acceptance #21)', () => {
     const c = compareUsage(0, 0.02, 5)
     expect(c.variancePct).toBeNull()
     expect(c.flagged).toBe(false)
+  })
+})
+
+describe('costing what was used', () => {
+  const buy = (at: string, unitCostCentavos?: number): InventoryMove => ({
+    id: Math.random().toString(36).slice(2),
+    itemId: 'i1',
+    type: 'in',
+    qty: 10,
+    at,
+    byUserId: 'u1',
+    unitCostCentavos,
+  })
+
+  it('takes the most recent purchase price, whatever order the moves are in', () => {
+    const moves = [buy('2026-07-01T00:00:00.000Z', 12000), buy('2026-08-01T00:00:00.000Z', 13500)]
+    expect(latestUnitCostCentavos(moves)).toBe(13500)
+    expect(latestUnitCostCentavos([...moves].reverse())).toBe(13500)
+  })
+
+  it('ignores purchases with no recorded cost, and every non-purchase move', () => {
+    expect(latestUnitCostCentavos([buy('2026-08-05T00:00:00.000Z'), buy('2026-07-01T00:00:00.000Z', 12000)])).toBe(12000)
+    expect(latestUnitCostCentavos([move('out', 5), move('adjust', -2)])).toBeNull()
+    expect(latestUnitCostCentavos([])).toBeNull()
+  })
+
+  it('values usage at that price, in whole centavos', () => {
+    expect(usageCostCentavos(12.5, 13500)).toBe(168750)
+    expect(usageCostCentavos(0.333, 10000)).toBe(3330)
+    expect(usageCostCentavos(12.5, null)).toBeNull()
   })
 })
