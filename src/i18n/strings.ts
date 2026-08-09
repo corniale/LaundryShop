@@ -4,7 +4,18 @@
  */
 export type Locale = 'tl' | 'en'
 
-type Entry = { tl: string; en: string }
+/**
+ * A locale's value is either one string or a pair of plural forms.
+ * t() picks `one` when the `n` parameter is exactly 1, `other`
+ * otherwise — so "1 item" never renders as "1 items".
+ *
+ * Plurality is declared per locale on purpose: English inflects the
+ * noun, while Taglish keeps it unchanged after a numeral ("1 item",
+ * "5 item"), so tl legitimately supplies a single form.
+ */
+type PluralForms = { one: string; other: string }
+type LocaleValue = string | PluralForms
+type Entry = { tl: LocaleValue; en: LocaleValue }
 
 const strings = {
   // ── Tabs / navigation ──────────────────────────────────────────
@@ -43,7 +54,10 @@ const strings = {
   'today.overdue': { tl: 'Lagpas na', en: 'Overdue' },
   'today.lowStock': { tl: 'Paubos na', en: 'Low stock' },
   'today.inProgress': { tl: 'Ginagawa', en: 'In progress' },
-  'today.lowStockCount': { tl: '{n} item', en: '{n} items' },
+  'today.lowStockCount': {
+    tl: '{n} item',
+    en: { one: '{n} item', other: '{n} items' },
+  },
   'today.allStocked': { tl: 'Sapat lahat', en: 'All stocked' },
   'today.closeDay': { tl: 'Isara ang araw', en: 'Close the day' },
   'today.closeDaySummary': { tl: 'Buod ng araw', en: 'Day summary' },
@@ -66,7 +80,10 @@ const strings = {
 
   // ── Backup health chip ─────────────────────────────────────────
   'backup.chip.today': { tl: '✓ Naka-backup ngayong araw', en: '✓ Backed up today' },
-  'backup.chip.daysAgo': { tl: '! Huling backup: {n} araw na', en: '! Last backup: {n} days ago' },
+  'backup.chip.daysAgo': {
+    tl: '! Huling backup: {n} araw na',
+    en: { one: '! Last backup: {n} day ago', other: '! Last backup: {n} days ago' },
+  },
   'backup.chip.never': { tl: '!! Wala pang backup', en: '!! No backup yet' },
   'backup.prompt.title': { tl: 'Oras na para mag-backup', en: 'Time to back up' },
   'backup.prompt.body': {
@@ -173,6 +190,10 @@ const strings = {
   'customers.address': { tl: 'Address', en: 'Address' },
   'customers.notes': { tl: 'Notes', en: 'Notes' },
   'customers.orders': { tl: 'orders', en: 'orders' },
+  'customers.orderCount': {
+    tl: '{n} order',
+    en: { one: '{n} order', other: '{n} orders' },
+  },
   'customers.totalSpend': { tl: 'Kabuuang gastos', en: 'Total spend' },
   'customers.balance': { tl: 'Balanse', en: 'Balance' },
   'customers.archive': { tl: 'I-archive', en: 'Archive' },
@@ -332,8 +353,11 @@ const strings = {
   'lock.who': { tl: 'Sino ka?', en: 'Who are you?' },
   'lock.wrong': { tl: 'Maling PIN.', en: 'Wrong PIN.' },
   'lock.cooldown': {
-    tl: '5 maling subok. Maghintay ng {s} segundo.',
-    en: '5 wrong attempts. Wait {s} seconds.',
+    tl: '5 maling subok. Maghintay ng {n} segundo.',
+    en: {
+      one: '5 wrong attempts. Wait {n} second.',
+      other: '5 wrong attempts. Wait {n} seconds.',
+    },
   },
   'lock.forgot': { tl: 'Nakalimutan ang PIN?', en: 'Forgot PIN?' },
   'lock.recovery': { tl: 'Ilagay ang recovery code', en: 'Enter recovery code' },
@@ -355,8 +379,11 @@ const strings = {
   'backupData.lastBackup': { tl: 'Huling backup', en: 'Last backup' },
   'backupData.never': { tl: 'Wala pa', en: 'Never' },
   'backupData.restorePreview': {
-    tl: 'Ito ay {orders} orders mula {from} hanggang {to}. Ang nasa phone ngayon: {current} orders.',
-    en: 'This has {orders} orders from {from} to {to}. Currently on this phone: {current} orders.',
+    tl: 'Ito ay {n} order mula {from} hanggang {to}. Ang nasa phone ngayon: {current}.',
+    en: {
+      one: 'This has {n} order from {from} to {to}. Currently on this phone: {current}.',
+      other: 'This has {n} orders from {from} to {to}. Currently on this phone: {current}.',
+    },
   },
   'backupData.replaceAll': { tl: 'Palitan lahat', en: 'Replace everything' },
   'backupData.merge': { tl: 'I-merge', en: 'Merge' },
@@ -516,10 +543,20 @@ export function getLocale(): Locale {
   return currentLocale
 }
 
-/** Translate a key, substituting {placeholders} from params. */
+/**
+ * Translate a key, substituting {placeholders} from params. When the
+ * entry declares plural forms, `params.n` selects between them.
+ */
 export function t(key: StringKey, params?: Record<string, string | number>): string {
-  const entry = strings[key]
-  let text: string = entry ? entry[currentLocale] : key
+  const entry = strings[key] as Entry | undefined
+  const value: LocaleValue = entry ? entry[currentLocale] : key
+  let text: string
+  if (typeof value === 'string') {
+    text = value
+  } else {
+    const n = Number(params?.n ?? 0)
+    text = Math.abs(n) === 1 ? value.one : value.other
+  }
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       text = text.split(`{${k}}`).join(String(v))

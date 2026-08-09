@@ -182,10 +182,10 @@ export function BackupScreen() {
             </p>
             <p className="text-sm text-ink-muted">
               {t('backupData.restorePreview', {
-                orders: preview.counts.orders ?? 0,
+                n: preview.counts.orders ?? 0,
                 from: preview.orderDateRange.from ? fmtDateFull(preview.orderDateRange.from) : '—',
                 to: preview.orderDateRange.to ? fmtDateFull(preview.orderDateRange.to) : '—',
-                current: preview.currentOrderCount,
+                current: t('customers.orderCount', { n: preview.currentOrderCount }),
               })}
             </p>
             {preview.migrationNotes.length > 0 && (
