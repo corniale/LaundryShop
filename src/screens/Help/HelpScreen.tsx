@@ -18,10 +18,18 @@ const CONTENT = {
       title: 'Paano mag-backup',
       body: `Ang backup ay isang file na naglalaman ng LAHAT ng records mo. Kapag nawala ang phone, ang backup lang ang makakapagbalik ng data.
 
-• Araw-araw, i-tap ang backup chip sa taas ng Ngayon screen.
-• Kung naka-set ang backup folder (Android/Chrome), kusa itong nagse-save araw-araw.
-• Sa iPhone: i-share ang file sa iCloud Drive o sa sarili mong Messenger chat — palaging PAREHONG lalagyan.
-• May naka-tagong kopya rin sa loob ng app (huling 7 araw) — makikita sa Backup at Data.`,
+GAANO KADALAS
+• Araw-araw, pagsara ng shop. Ito na ang huling hakbang ng Isara ang araw — hindi sarado ang araw hangga't walang backup.
+• Isang beses kada linggo, magpadala ng kopya sa IBANG lugar: ibang phone, laptop, o Messenger sa sarili mo. Kung nasa iisang phone lang lahat, kasama itong mawawala.
+• Bago mag-update ng phone o bago ipagawa ito sa repair shop.
+
+PAANO
+• I-tap ang backup chip sa taas ng Ngayon screen, o gamitin ang Isara ang araw.
+• Kung naka-set ang backup folder (Android/Chrome), kusa itong nagse-save araw-araw — pipili ka lang ng folder minsan.
+• Sa iPhone: kailangang i-tap — hindi puwedeng automatic. I-share ang file sa iCloud Drive o sa sarili mong Messenger chat — palaging PAREHONG lalagyan.
+
+TANDAAN
+• May naka-tagong kopya sa loob ng app (huling 7 araw, makikita sa Backup at Data). Pang-undo lang ito ng pagkakamali — kasama itong mawawala kapag nawala o nasira ang phone. Ang file lang ang totoong backup.`,
     },
     {
       title: 'Paano mag-restore',
@@ -59,10 +67,18 @@ Nakalimutan ang Owner PIN? Gamitin ang recovery code na isinulat mo noong setup,
       title: 'How to back up',
       body: `A backup is one file containing ALL your records. If the phone is lost, only a backup can bring the data back.
 
-• Every day, tap the backup chip at the top of the Today screen.
-• If a backup folder is set (Android/Chrome), it saves silently every day.
-• On iPhone: share the file to iCloud Drive or your own Messenger chat — always the SAME destination.
-• The app also keeps hidden copies inside itself (last 7 days) — see Backup & Data.`,
+HOW OFTEN
+• Every day, at closing. It is the last step of Close the day — the day is not closed until it is backed up.
+• Once a week, send one copy somewhere ELSE: a different phone, a laptop, or Messenger to yourself. If every copy sits on one phone, one accident takes them all.
+• Before a phone update, and before handing the phone to a repair shop.
+
+HOW
+• Tap the backup chip at the top of the Today screen, or use Close the day.
+• If a backup folder is set (Android/Chrome), it saves silently every day — you pick the folder once.
+• On iPhone it cannot be automatic; it needs a tap. Share the file to iCloud Drive or your own Messenger chat — always the SAME destination.
+
+REMEMBER
+• The app keeps hidden copies inside itself (last 7 days, see Backup & Data). Those are an undo for mistakes — they go with the phone if it is lost or broken. Only the file is a real backup.`,
     },
     {
       title: 'How to restore',

@@ -82,6 +82,21 @@ export async function getBackupFolder(): Promise<DirHandle | null> {
   }
 }
 
+/**
+ * Has a folder already been chosen? Only queries — never calls
+ * requestPermission, so this is safe to run on load without throwing a
+ * permission prompt at someone who was just opening the app.
+ */
+export async function hasBackupFolder(): Promise<boolean> {
+  const row = await handleDb.handles.get(HANDLE_KEY)
+  if (!row) return false
+  try {
+    return (await row.handle.queryPermission({ mode: 'readwrite' })) !== 'denied'
+  } catch {
+    return false
+  }
+}
+
 /** Write to folder, prune to the newest N backup files. */
 async function writeToFolder(handle: DirHandle, filename: string, json: string): Promise<void> {
   const file = await handle.getFileHandle(filename, { create: true })
