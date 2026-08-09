@@ -319,6 +319,7 @@ const strings = {
   // ── Reports ────────────────────────────────────────────────────
   'reports.title': { tl: 'Reports', en: 'Reports' },
   'reports.income': { tl: 'Kita', en: 'Income' },
+  'reports.hourly': { tl: 'Oras-oras', en: 'Hourly' },
   'reports.daily': { tl: 'Araw-araw', en: 'Daily' },
   'reports.weekly': { tl: 'Lingguhan', en: 'Weekly' },
   'reports.monthly': { tl: 'Buwanan', en: 'Monthly' },

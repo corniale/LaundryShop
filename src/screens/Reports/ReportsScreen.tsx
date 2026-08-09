@@ -2,9 +2,20 @@
  * Reports — Owner-only. Hand-built CSS bars, mono figures, CSV export,
  * date presets: Ngayon / Linggong ito / Buwang ito / Custom.
  */
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { format, subDays, startOfDay, endOfDay } from 'date-fns'
+import {
+  format,
+  subDays,
+  startOfDay,
+  endOfDay,
+  addHours,
+  endOfHour,
+  endOfWeek,
+  eachDayOfInterval,
+  eachWeekOfInterval,
+  differenceInCalendarDays,
+} from 'date-fns'
 import { db } from '../../data/db'
 import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
@@ -16,18 +27,45 @@ import { toCsv } from '../../domain/csv'
 
 type Preset = 'today' | 'week' | 'month' | 'custom'
 
-function Bar({ label, value, max, display }: { label: string; value: number; max: number; display: string }) {
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="w-20 shrink-0 truncate text-ink-muted">{label}</span>
-      <div className="h-5 flex-1 overflow-hidden rounded-input bg-wash-deep">
-        <div
-          className="h-full rounded-input"
-          style={{ width: `${max > 0 ? (value / max) * 100 : 0}%`, backgroundColor: 'var(--primary-500)' }}
-        />
-      </div>
-      <span className="w-24 shrink-0 text-right font-mono text-xs">{display}</span>
+/** Bar list. Service names are as long as they are, so the layout gives them the room. */
+function BarList({ rows }: { rows: Array<{ label: string; value: number; display: string }> }) {
+  const max = Math.max(...rows.map((r) => r.value), 0)
+  const track = (value: number) => (
+    <div className="h-5 overflow-hidden rounded-input bg-wash-deep">
+      <div
+        className="h-full rounded-input"
+        style={{ width: `${max > 0 ? (value / max) * 100 : 0}%`, backgroundColor: 'var(--primary-500)' }}
+      />
     </div>
+  )
+  return (
+    <>
+      {/* Phone: name and figure share a line, track sits beneath at full width */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {rows.map((r) => (
+          <div key={r.label} className="flex flex-col gap-1 text-sm">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="min-w-0 truncate text-ink-muted">{r.label}</span>
+              <span className="shrink-0 font-mono text-xs">{r.display}</span>
+            </div>
+            {track(r.value)}
+          </div>
+        ))}
+      </div>
+
+      {/* md and up: one shared grid, so the name column sizes to the longest
+          name instead of a fixed width, and every track still starts on the
+          same line. Nothing is cut while there is space beside it. */}
+      <div className="hidden grid-cols-[minmax(0,max-content)_minmax(0,1fr)_max-content] items-center gap-x-3 gap-y-2 text-sm md:grid">
+        {rows.map((r) => (
+          <Fragment key={r.label}>
+            <span className="truncate text-ink-muted">{r.label}</span>
+            {track(r.value)}
+            <span className="text-right font-mono text-xs">{r.display}</span>
+          </Fragment>
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -66,18 +104,54 @@ export function ReportsScreen() {
     return map
   }, [payments])
 
-  // Daily income — last 30 days
-  const dailyIncome = useMemo(() => {
-    const days: Array<{ label: string; value: number }> = []
-    for (let i = 29; i >= 0; i--) {
-      const day = subDays(new Date(), i)
-      const from = startOfDay(day)
-      const to = endOfDay(day)
-      const total = payments.filter((p) => inRange(p.receivedAt, from, to)).reduce((s, p) => s + p.amountCentavos, 0)
-      days.push({ label: format(day, 'MMM d'), value: total })
+  /**
+   * Income chart, over whatever range the picker is on. The grain follows
+   * the span so the chart stays a chart: a single day would be one fat bar
+   * and a year would be 365 hairlines, so one day reads by the hour and
+   * anything past two months reads by the week.
+   */
+  const { grain, buckets } = useMemo(() => {
+    const spanDays = differenceInCalendarDays(range.to, range.from) + 1
+    if (spanDays <= 1) {
+      const base = startOfDay(range.from)
+      return {
+        grain: 'hourly' as const,
+        buckets: Array.from({ length: 24 }, (_, h) => {
+          const from = addHours(base, h)
+          return { label: format(from, 'h a'), from, to: endOfHour(from) }
+        }),
+      }
     }
-    return days
-  }, [payments])
+    if (spanDays <= 62) {
+      return {
+        grain: 'daily' as const,
+        buckets: eachDayOfInterval({ start: range.from, end: range.to }).map((d) => ({
+          label: format(d, 'MMM d'),
+          from: startOfDay(d),
+          to: endOfDay(d),
+        })),
+      }
+    }
+    return {
+      grain: 'weekly' as const,
+      buckets: eachWeekOfInterval({ start: range.from, end: range.to }, { weekStartsOn: 1 }).map((d) => ({
+        label: format(d, 'MMM d'),
+        from: startOfDay(d),
+        to: endOfWeek(d, { weekStartsOn: 1 }),
+      })),
+    }
+  }, [range])
+
+  // Drawn from rangePayments, so the partial weeks at either end of a weekly
+  // chart cannot pull in money from outside the chosen range.
+  const incomeSeries = useMemo(
+    () =>
+      buckets.map((b) => ({
+        label: b.label,
+        value: rangePayments.filter((p) => inRange(p.receivedAt, b.from, b.to)).reduce((s, p) => s + p.amountCentavos, 0),
+      })),
+    [buckets, rangePayments],
+  )
 
   // Income + kilos by service (range)
   const byService = useMemo(() => {
@@ -129,7 +203,7 @@ export function ReportsScreen() {
   }, [users, rangeOrders, statusEvents, rangePayments, range])
 
   const incomeTotal = rangePayments.reduce((s, p) => s + p.amountCentavos, 0)
-  const maxDaily = Math.max(...dailyIncome.map((d) => d.value), 1)
+  const maxBar = Math.max(...incomeSeries.map((d) => d.value), 1)
 
   function exportAll() {
     const rows: Array<Array<string | number>> = []
@@ -168,25 +242,29 @@ export function ReportsScreen() {
           <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
         </div>
       )}
+      {/* States the dates every figure below is answering for */}
+      <div className="font-mono text-xs text-ink-muted">
+        {format(range.from, 'MMM d, yyyy')} – {format(range.to, 'MMM d, yyyy')}
+      </div>
 
       <Card>
         <div className="mb-1 text-xs font-medium text-ink-muted">{t('reports.income')}</div>
         <div className="font-mono text-xl font-medium text-accent-700">{formatCentavos(incomeTotal)}</div>
       </Card>
 
-      {/* Daily bars, last 30 days */}
+      {/* Income over the chosen range */}
       <Card>
         <h2 className="mb-2 font-display text-base font-semibold">
-          {t('reports.income')} — {t('reports.daily')}
+          {t('reports.income')} — {t(`reports.${grain}` as 'reports.daily')}
         </h2>
         <div className="flex h-32 items-end gap-[2px]">
-          {dailyIncome.map((d, i) => (
+          {incomeSeries.map((d, i) => (
             <div
               key={i}
               title={`${d.label}: ${formatCentavos(d.value)}`}
               className="flex-1 rounded-t-[3px]"
               style={{
-                height: `${(d.value / maxDaily) * 100}%`,
+                height: `${(d.value / maxBar) * 100}%`,
                 minHeight: d.value > 0 ? 3 : 1,
                 backgroundColor: d.value > 0 ? 'var(--primary-500)' : 'var(--line)',
               }}
@@ -194,8 +272,8 @@ export function ReportsScreen() {
           ))}
         </div>
         <div className="mt-1 flex justify-between text-xs text-ink-muted">
-          <span>{dailyIncome[0]?.label}</span>
-          <span>{dailyIncome[dailyIncome.length - 1]?.label}</span>
+          <span>{incomeSeries[0]?.label}</span>
+          <span>{incomeSeries[incomeSeries.length - 1]?.label}</span>
         </div>
       </Card>
 
@@ -204,27 +282,17 @@ export function ReportsScreen() {
         {byService.length === 0 ? (
           <EmptyState>{t('reports.empty')}</EmptyState>
         ) : (
-          <div className="flex flex-col gap-2">
-            {byService.map(([name, v]) => (
-              <Bar key={name} label={name} value={v.income} max={byService[0][1].income} display={formatCentavos(v.income)} />
-            ))}
-          </div>
+          <BarList rows={byService.map(([name, v]) => ({ label: name, value: v.income, display: formatCentavos(v.income) }))} />
         )}
       </Card>
 
       <Card>
         <h2 className="mb-2 font-display text-base font-semibold">{t('reports.kilosByService')}</h2>
-        <div className="flex flex-col gap-2">
-          {byService.map(([name, v]) => (
-            <Bar
-              key={name}
-              label={name}
-              value={v.kilos}
-              max={Math.max(...byService.map(([, x]) => x.kilos), 1)}
-              display={`${v.kilos.toFixed(1)} kg`}
-            />
-          ))}
-        </div>
+        {byService.length === 0 ? (
+          <EmptyState>{t('reports.empty')}</EmptyState>
+        ) : (
+          <BarList rows={byService.map(([name, v]) => ({ label: name, value: v.kilos, display: `${v.kilos.toFixed(1)} kg` }))} />
+        )}
       </Card>
 
       <Card>
