@@ -61,6 +61,22 @@ const strings = {
   'today.allStocked': { tl: 'Sapat lahat', en: 'All stocked' },
   'today.closeDay': { tl: 'Isara ang araw', en: 'Close the day' },
   'today.closeDaySummary': { tl: 'Buod ng araw', en: 'Day summary' },
+  'today.closeDayAction': { tl: 'I-backup at isara ang araw', en: 'Back up and close the day' },
+  'today.closeDayNotYet': {
+    tl: 'Hindi pa sarado ang araw hangga’t walang backup. Dito nawawala ang bayad kapag nasira ang phone.',
+    en: 'The day is not closed until it is backed up. This is the step that saves the day’s payments if the phone is lost.',
+  },
+  'today.closeDayDone': { tl: 'Sarado na ang araw. Naka-backup {time}.', en: 'Day closed. Backed up at {time}.' },
+  'today.closeDayFailed': {
+    tl: 'Hindi natapos ang backup. Subukan ulit — hindi pa sarado ang araw.',
+    en: 'The backup did not finish, so the day is not closed. Try again.',
+  },
+  'today.autoBackupTitle': { tl: 'Puwedeng automatic ang backup', en: 'This phone can back up on its own' },
+  'today.autoBackupBody': {
+    tl: 'Pumili ng folder minsan lang, tapos araw-araw itong magba-backup mag-isa.',
+    en: 'Pick a folder once and it writes a backup by itself, the first time you open the app each day.',
+  },
+  'today.autoBackupPick': { tl: 'Pumili ng folder', en: 'Choose folder' },
   'today.emptyOrders': {
     tl: 'Wala pang order ngayong araw. I-tap ang + para magsimula.',
     en: 'No orders yet today. Tap + to start.',

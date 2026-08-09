@@ -11,11 +11,14 @@ import { ShopRail } from '../../components/WashLine'
 import { Card, Stat, Button, Sheet } from '../../components/ui'
 import { DataTable } from '../../components/DataTable'
 import { backupHealth, promptLevel, markPrompted, storageUsage } from '../../backup/scheduler'
-import { runBackup } from '../../backup/destinations'
+import { runBackup, detectCapabilities, hasBackupFolder, pickBackupFolder } from '../../backup/destinations'
 import { useToast } from '../../components/Toast'
-import { fmtDate, todayRange, inRange } from '../../app/format'
+import { fmtDate, fmtTime, todayRange, inRange } from '../../app/format'
 import { buildReadyMessage, sendReadyMessage } from '../../components/Stub'
 import { STATUS_ORDER } from '../../domain/status'
+
+/** Per-device UI state, not shop data — deliberately not in the backup. */
+const FOLDER_OFFER_DISMISSED = 'backup-folder-offer-dismissed'
 
 export function TodayScreen() {
   const navigate = useNavigate()
@@ -23,6 +26,11 @@ export function TodayScreen() {
   const [closeDayOpen, setCloseDayOpen] = useState(false)
   const [promptOpen, setPromptOpen] = useState<'sheet' | 'modal' | null>(null)
   const [storagePct, setStoragePct] = useState<number | null>(null)
+  /** 'review' until the backup lands; the day is not closed before then. */
+  const [closeStep, setCloseStep] = useState<'review' | 'done'>('review')
+  const [closeFailed, setCloseFailed] = useState(false)
+  const [closedAt, setClosedAt] = useState<string | null>(null)
+  const [offerFolder, setOfferFolder] = useState(false)
 
   const shop = useLiveQuery(() => db.shop.toArray(), [])?.[0]
   const appMeta = useLiveQuery(() => db.appMeta.get('app'), [])
@@ -93,6 +101,55 @@ export function TodayScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appMeta?.id])
 
+  /**
+   * A phone that can write a file by itself should be doing it. If the
+   * capability is there and no folder has been chosen, the shop is doing
+   * manual work the device would do for free — so say so, once, where they
+   * will see it. Dismissible, and dismissed for good: a banner that cannot
+   * be answered is a banner people stop reading. Staleness prompts still
+   * cover the shop that says no.
+   */
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      if (!detectCapabilities().folder) return
+      if (localStorage.getItem(FOLDER_OFFER_DISMISSED) === '1') return
+      const has = await hasBackupFolder()
+      if (!cancelled) setOfferFolder(!has)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [appMeta?.backupStrategy])
+
+  async function chooseFolder() {
+    const ok = await pickBackupFolder()
+    if (!ok) return
+    setOfferFolder(false)
+    // Write one immediately, so the folder is not empty until tomorrow.
+    const result = await runBackup('manual', 'folder')
+    toast({ message: result.ok ? t('backupData.folderSet') : t('backup.failed') })
+  }
+
+  function openCloseDay() {
+    setCloseStep('review')
+    setCloseFailed(false)
+    setCloseDayOpen(true)
+  }
+
+  /** The only way out of the close-the-day sheet that counts as done. */
+  async function closeDayWithBackup() {
+    const result = await runBackup('manual')
+    if (!result.ok) {
+      setCloseFailed(true)
+      return
+    }
+    setCloseFailed(false)
+    setClosedAt(new Date().toISOString())
+    setCloseStep('done')
+    setPromptOpen(null)
+  }
+
   async function backupNow() {
     const result = await runBackup('manual')
     toast({ message: result.ok ? t('backup.done') : t('backup.failed') })
@@ -161,6 +218,34 @@ export function TodayScreen() {
         <div className="rounded-card bg-attention-soft px-4 py-3 text-sm text-attention-deep">
           {t('backupData.storageWarning')} ({Math.round(storagePct)}%)
         </div>
+      )}
+
+      {offerFolder && (
+        <Card className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="font-display text-base font-semibold">{t('today.autoBackupTitle')}</div>
+            <p className="mt-0.5 text-sm text-ink-muted">{t('today.autoBackupBody')}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="ghost"
+              className="!py-2 text-sm"
+              onClick={() => {
+                try {
+                  localStorage.setItem(FOLDER_OFFER_DISMISSED, '1')
+                } catch {
+                  // a locked-down browser just gets the card again next time
+                }
+                setOfferFolder(false)
+              }}
+            >
+              {t('backup.prompt.later')}
+            </Button>
+            <Button className="!py-2 text-sm" onClick={() => void chooseFolder()}>
+              {t('today.autoBackupPick')}
+            </Button>
+          </div>
+        </Card>
       )}
 
       {/* Shop rail */}
@@ -308,7 +393,7 @@ export function TodayScreen() {
         />
       </section>
 
-      <Button variant="secondary" onClick={() => setCloseDayOpen(true)}>
+      <Button variant="secondary" onClick={openCloseDay}>
         {t('today.closeDay')}
       </Button>
 
@@ -337,9 +422,21 @@ export function TodayScreen() {
               ))
             )}
           </div>
-          <Button onClick={() => void backupNow().then(() => setCloseDayOpen(false))}>
-            {t('backup.prompt.action')}
-          </Button>
+          {closeStep === 'done' ? (
+            <>
+              <p className="rounded-input bg-positive-soft p-3 text-sm font-medium text-positive-deep">
+                {t('today.closeDayDone', { time: closedAt ? fmtTime(closedAt) : '' })}
+              </p>
+              <Button onClick={() => setCloseDayOpen(false)}>{t('common.done')}</Button>
+            </>
+          ) : (
+            <>
+              <p className={`rounded-input p-3 text-sm ${closeFailed ? 'bg-attention-soft font-medium text-attention-deep' : 'text-ink-muted'}`}>
+                {closeFailed ? t('today.closeDayFailed') : t('today.closeDayNotYet')}
+              </p>
+              <Button onClick={() => void closeDayWithBackup()}>{t('today.closeDayAction')}</Button>
+            </>
+          )}
         </div>
       </Sheet>
 

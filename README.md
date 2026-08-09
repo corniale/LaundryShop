@@ -55,7 +55,10 @@ Language: `tl` (Taglish) is the default; a buyer can be handed an English build 
 - Three destinations by capability detection: **folder handle** (File System Access API — silent daily writes, keeps last 14), **Web Share** (iOS/iPadOS primary), **download** (universal). The chosen strategy is stored in AppMeta; users never see a capability they don't have.
 - On-device snapshots (last 7 daily + 4 weekly + pre-restore) live inside IndexedDB for file-free rollback.
 - Restore validates shape (zod) → schema version direction → checksum before writing anything, always takes a pre-restore snapshot, and offers Replace (typed confirmation) or Merge (never overwrites a newer record).
-- Backup health is surfaced on the Today screen chip; stale >3 days prompts once a day, >7 days prompts modally; Close-the-day always offers a backup.
+- Backup health is surfaced on the Today screen chip; stale >3 days prompts once a day, >7 days prompts modally.
+- **Close the day is gated on a backup**: the sheet's only primary action is "Back up and close the day", and it reports the day closed only once the backup lands. The X still lets someone out — a modal with no exit would trap them when a share sheet is cancelled — but there is no button that finishes the ritual without the file.
+- **Automatic where the platform allows it.** A device with the File System Access API writes a backup silently on the first open of each day, once a folder is chosen; if the capability is present and no folder is set, Today offers to set one (dismissible, per device). iOS cannot do this — the share sheet requires a gesture — so those installs are tap-to-back-up, and the staleness prompts carry the weight.
+- **Recommended cadence**: daily at closing, plus one copy a week to a physically different place. On-device snapshots are an undo history, not a backup — they are lost with the phone.
 
 ## Bumping the schema version
 
