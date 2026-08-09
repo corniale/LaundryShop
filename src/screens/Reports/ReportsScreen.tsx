@@ -20,12 +20,11 @@ import { db } from '../../data/db'
 import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
 import { balanceCentavos } from '../../domain/payments'
-import { Card, Chip, Input, Button, EmptyState } from '../../components/ui'
+import { Card, Button, EmptyState } from '../../components/ui'
 import { DataTable } from '../../components/DataTable'
-import { todayRange, weekRange, monthRange, inRange, downloadCsv } from '../../app/format'
+import { DateRangePicker, useDateRange } from '../../components/DateRangePicker'
+import { inRange, downloadCsv } from '../../app/format'
 import { toCsv } from '../../domain/csv'
-
-type Preset = 'today' | 'week' | 'month' | 'custom'
 
 /** Bar list. Service names are as long as they are, so the layout gives them the room. */
 function BarList({ rows }: { rows: Array<{ label: string; value: number; display: string }> }) {
@@ -70,25 +69,14 @@ function BarList({ rows }: { rows: Array<{ label: string; value: number; display
 }
 
 export function ReportsScreen() {
-  const [preset, setPreset] = useState<Preset>('month')
-  const [customFrom, setCustomFrom] = useState('')
-  const [customTo, setCustomTo] = useState('')
+  const dateRange = useDateRange('month')
+  const { range } = dateRange
 
   const orders = useLiveQuery(() => db.orders.toArray(), []) ?? []
   const payments = useLiveQuery(() => db.payments.toArray(), []) ?? []
   const customers = useLiveQuery(() => db.customers.toArray(), []) ?? []
   const users = useLiveQuery(() => db.users.toArray(), []) ?? []
   const statusEvents = useLiveQuery(() => db.statusEvents.toArray(), []) ?? []
-
-  const range = useMemo(() => {
-    if (preset === 'today') return todayRange()
-    if (preset === 'week') return weekRange()
-    if (preset === 'month') return monthRange()
-    return {
-      from: customFrom ? startOfDay(new Date(customFrom)) : startOfDay(subDays(new Date(), 30)),
-      to: customTo ? endOfDay(new Date(customTo)) : endOfDay(new Date()),
-    }
-  }, [preset, customFrom, customTo])
 
   const liveOrders = useMemo(() => orders.filter((o) => !o.voidedAt), [orders])
   const rangeOrders = useMemo(() => liveOrders.filter((o) => inRange(o.receivedAt, range.from, range.to)), [liveOrders, range])
@@ -229,23 +217,7 @@ export function ReportsScreen() {
         </Button>
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
-        {(['today', 'week', 'month', 'custom'] as const).map((p) => (
-          <Chip key={p} selected={preset === p} onClick={() => setPreset(p)}>
-            {t(`reports.preset.${p}` as 'reports.preset.today')}
-          </Chip>
-        ))}
-      </div>
-      {preset === 'custom' && (
-        <div className="flex gap-2">
-          <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
-          <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
-        </div>
-      )}
-      {/* States the dates every figure below is answering for */}
-      <div className="font-mono text-xs text-ink-muted">
-        {format(range.from, 'MMM d, yyyy')} – {format(range.to, 'MMM d, yyyy')}
-      </div>
+      <DateRangePicker {...dateRange} />
 
       <Card>
         <div className="mb-1 text-xs font-medium text-ink-muted">{t('reports.income')}</div>
@@ -295,30 +267,36 @@ export function ReportsScreen() {
         )}
       </Card>
 
-      <Card>
-        <h2 className="mb-2 font-display text-base font-semibold">{t('reports.topCustomers')}</h2>
-        <div className="flex flex-col gap-1.5">
-          {topCustomers.map((c, i) => (
-            <div key={i} className="flex justify-between text-sm">
-              <span>{c.name}</span>
-              <span className="font-mono">{formatCentavos(c.spend)}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* Two readings of the same customers — who spends and who owes — so
+          they belong beside each other. Grid rows stretch, so the cards match
+          height whichever list is longer, and neither scrolls inside itself. */}
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card>
+          <h2 className="mb-2 font-display text-base font-semibold">{t('reports.topCustomers')}</h2>
+          <div className="flex flex-col gap-1.5">
+            {topCustomers.map((c, i) => (
+              <div key={i} className="flex justify-between gap-2 text-sm">
+                <span className="min-w-0 truncate">{c.name}</span>
+                <span className="shrink-0 font-mono">{formatCentavos(c.spend)}</span>
+              </div>
+            ))}
+            {topCustomers.length === 0 && <div className="text-sm text-ink-muted">{t('reports.empty')}</div>}
+          </div>
+        </Card>
 
-      <Card>
-        <h2 className="mb-2 font-display text-base font-semibold">{t('reports.withBalance')}</h2>
-        <div className="flex flex-col gap-1.5">
-          {withBalance.map((c, i) => (
-            <div key={i} className="flex justify-between text-sm">
-              <span>{c.name}</span>
-              <span className="font-mono text-attention-deep">{formatCentavos(c.balance)}</span>
-            </div>
-          ))}
-          {withBalance.length === 0 && <div className="text-sm text-ink-muted">{t('payments.allPaid')}</div>}
-        </div>
-      </Card>
+        <Card>
+          <h2 className="mb-2 font-display text-base font-semibold">{t('reports.withBalance')}</h2>
+          <div className="flex flex-col gap-1.5">
+            {withBalance.map((c, i) => (
+              <div key={i} className="flex justify-between gap-2 text-sm">
+                <span className="min-w-0 truncate">{c.name}</span>
+                <span className="shrink-0 font-mono text-attention-deep">{formatCentavos(c.balance)}</span>
+              </div>
+            ))}
+            {withBalance.length === 0 && <div className="text-sm text-ink-muted">{t('payments.allPaid')}</div>}
+          </div>
+        </Card>
+      </div>
 
       <Card>
         <h2 className="mb-2 font-display text-base font-semibold">{t('reports.staff')}</h2>
