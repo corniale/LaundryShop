@@ -4,6 +4,7 @@
  * Status changes happen on the rail (see components/StatusRail).
  */
 import { useMemo, useState } from 'react'
+import { IconPencil } from '@tabler/icons-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../data/db'
@@ -56,6 +57,7 @@ export function OrderDetailScreen() {
   const [reverseTarget, setReverseTarget] = useState<string | null>(null)
   const [reverseReason, setReverseReason] = useState('')
   const [editOpen, setEditOpen] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editPromised, setEditPromised] = useState('')
 
@@ -175,8 +177,24 @@ export function OrderDetailScreen() {
               {formatCentavos(balance)}
             </span>
           </div>
-          <div className="mt-1 text-xs text-ink-muted">
-            {t('orders.promised')}: {fmtDateFull(order.promisedAt)}
+          {/* The date is its own edit affordance — no separate button. */}
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-muted">
+            <span>{t('orders.readyBy')}:</span>
+            {canEdit ? (
+              <button
+                onClick={() => {
+                  setEditPromised(order.promisedAt.slice(0, 10))
+                  setEditOpen(true)
+                }}
+                className="inline-flex min-h-touch items-center gap-1 font-medium text-primary-600 underline decoration-dotted underline-offset-4"
+                aria-label={t('orders.editPickupDate')}
+              >
+                {fmtDateFull(order.promisedAt)}
+                <IconPencil size={13} stroke={1.75} aria-hidden />
+              </button>
+            ) : (
+              <span>{fmtDateFull(order.promisedAt)}</span>
+            )}
           </div>
         </div>
       </Card>
@@ -207,11 +225,10 @@ export function OrderDetailScreen() {
               variant="secondary"
               onClick={() => {
                 setEditNotes(order.notes ?? '')
-                setEditPromised(order.promisedAt.slice(0, 10))
-                setEditOpen(true)
+                setNotesOpen(true)
               }}
             >
-              {t('orders.edit')}
+              {t('orders.notes')}
             </Button>
           )}
           {isOwner && (
@@ -351,27 +368,41 @@ export function OrderDetailScreen() {
         </div>
       </Sheet>
 
-      {/* Edit sheet */}
-      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title={t('orders.edit')}>
+      {/* Pick-up date — opened from the date itself */}
+      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title={t('orders.readyBy')}>
         <div className="flex flex-col gap-3">
-          <Field label={t('orders.promised')}>
+          <Field label={t('orders.readyBy')}>
             <Input type="date" value={editPromised} onChange={(e) => setEditPromised(e.target.value)} />
           </Field>
-          <Field label={t('orders.notes')}>
-            <TextArea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
-          </Field>
           <Button
+            disabled={!editPromised}
             onClick={async () => {
               if (!currentUser) return
               await updateOrder(
                 order.id,
-                {
-                  notes: editNotes.trim() || undefined,
-                  promisedAt: new Date(`${editPromised}T18:00:00`).toISOString(),
-                },
+                { promisedAt: new Date(`${editPromised}T18:00:00`).toISOString() },
                 currentUser.id,
               )
+              toast({ message: t('orders.pickupDateSaved') })
               setEditOpen(false)
+            }}
+          >
+            {t('common.save')}
+          </Button>
+        </div>
+      </Sheet>
+
+      {/* Notes */}
+      <Sheet open={notesOpen} onClose={() => setNotesOpen(false)} title={t('orders.notes')}>
+        <div className="flex flex-col gap-3">
+          <Field label={t('orders.notes')}>
+            <TextArea rows={4} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+          </Field>
+          <Button
+            onClick={async () => {
+              if (!currentUser) return
+              await updateOrder(order.id, { notes: editNotes.trim() || undefined }, currentUser.id)
+              setNotesOpen(false)
             }}
           >
             {t('common.save')}
