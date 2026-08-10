@@ -83,6 +83,19 @@ export async function getBackupFolder(): Promise<DirHandle | null> {
 }
 
 /**
+ * Pick a folder and immediately write one backup into it. Without the seed
+ * the folder sits empty until tomorrow's first open, which reads as "I set
+ * this up and nothing happened". Both entry points — Today's offer and
+ * Backup & Data — go through here so they cannot drift apart.
+ */
+export async function pickBackupFolderAndSeed(): Promise<{ picked: boolean; wrote: boolean }> {
+  const picked = await pickBackupFolder()
+  if (!picked) return { picked: false, wrote: false }
+  const result = await runBackup('manual', 'folder')
+  return { picked: true, wrote: result.ok }
+}
+
+/**
  * Has a folder already been chosen? Only queries — never calls
  * requestPermission, so this is safe to run on load without throwing a
  * permission prompt at someone who was just opening the app.

@@ -10,7 +10,7 @@ import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { Card, Button, Sheet, Input } from '../../components/ui'
 import { fmtDateTime, fmtDateFull, fmtDate } from '../../app/format'
-import { runBackup, pickBackupFolder, detectCapabilities } from '../../backup/destinations'
+import { runBackup, pickBackupFolderAndSeed, detectCapabilities } from '../../backup/destinations'
 import { prepareRestore, executeRestore, restoreSnapshot, type RestorePreview } from '../../backup/restore'
 import { storageUsage } from '../../backup/scheduler'
 import { useEffect } from 'react'
@@ -94,15 +94,19 @@ export function BackupScreen() {
         <div className="mt-3 flex flex-col gap-2">
           <Button onClick={() => void backupNow()}>{t('backupData.backupNow')}</Button>
           {caps.folder && (
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                const ok = await pickBackupFolder()
-                if (ok) toast({ message: t('backupData.folderSet') })
-              }}
-            >
-              {t('backupData.pickFolder')}
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  // Seeds the folder with one backup, same as Today's offer.
+                  const { picked, wrote } = await pickBackupFolderAndSeed()
+                  if (picked) toast({ message: wrote ? t('backupData.folderSet') : t('backup.failed') })
+                }}
+              >
+                {t('backupData.pickFolder')}
+              </Button>
+              <p className="-mt-1 text-xs text-ink-muted">{t('backup.cloudHint')}</p>
+            </>
           )}
           <Button variant="secondary" onClick={() => void runBackup('manual', 'download')}>
             {t('backupData.download')}
