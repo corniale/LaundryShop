@@ -77,6 +77,10 @@ const strings = {
     en: 'Pick a folder once and it writes a backup by itself, the first time you open the app each day.',
   },
   'today.autoBackupPick': { tl: 'Pumili ng folder', en: 'Choose folder' },
+  'backup.cloudHint': {
+    tl: 'Mas mabuti kung folder na naka-sync sa cloud (Google Drive, iCloud Drive, OneDrive) — may kopya agad sa labas ng phone.',
+    en: 'Best is a folder that syncs to the cloud (Google Drive, iCloud Drive, OneDrive) — that puts a copy off the phone straight away.',
+  },
   'today.emptyOrders': {
     tl: 'Wala pang order ngayong araw. I-tap ang + para magsimula.',
     en: 'No orders yet today. Tap + to start.',

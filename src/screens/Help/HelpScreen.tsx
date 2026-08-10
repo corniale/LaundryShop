@@ -26,6 +26,7 @@ GAANO KADALAS
 PAANO
 • I-tap ang backup chip sa taas ng Ngayon screen, o gamitin ang Isara ang araw.
 • Kung naka-set ang backup folder (Android/Chrome), kusa itong nagse-save araw-araw — pipili ka lang ng folder minsan.
+• PUMILI NG CLOUD FOLDER kapag nagse-set: Google Drive, iCloud Drive, OneDrive, o Dropbox. Ang folder na nasa phone lang ay mawawala kasama ng phone. Kapag naka-cloud, tapos na rin ang lingguhang kopya sa labas — kusa na itong nagsi-sync.
 • Sa iPhone: kailangang i-tap — hindi puwedeng automatic. I-share ang file sa iCloud Drive o sa sarili mong Messenger chat — palaging PAREHONG lalagyan.
 
 TANDAAN
@@ -75,6 +76,7 @@ HOW OFTEN
 HOW
 • Tap the backup chip at the top of the Today screen, or use Close the day.
 • If a backup folder is set (Android/Chrome), it saves silently every day — you pick the folder once.
+• PICK A CLOUD FOLDER when you set it: Google Drive, iCloud Drive, OneDrive, or Dropbox. A folder that only lives on the phone dies with the phone. A synced one also covers the weekly off-site copy for you, because it copies itself out.
 • On iPhone it cannot be automatic; it needs a tap. Share the file to iCloud Drive or your own Messenger chat — always the SAME destination.
 
 REMEMBER

@@ -11,7 +11,7 @@ import { ShopRail } from '../../components/WashLine'
 import { Card, Stat, Button, Sheet } from '../../components/ui'
 import { DataTable } from '../../components/DataTable'
 import { backupHealth, promptLevel, markPrompted, storageUsage } from '../../backup/scheduler'
-import { runBackup, detectCapabilities, hasBackupFolder, pickBackupFolder } from '../../backup/destinations'
+import { runBackup, detectCapabilities, hasBackupFolder, pickBackupFolderAndSeed } from '../../backup/destinations'
 import { useToast } from '../../components/Toast'
 import { fmtDate, fmtTime, todayRange, inRange } from '../../app/format'
 import { buildReadyMessage, sendReadyMessage } from '../../components/Stub'
@@ -123,12 +123,10 @@ export function TodayScreen() {
   }, [appMeta?.backupStrategy])
 
   async function chooseFolder() {
-    const ok = await pickBackupFolder()
-    if (!ok) return
+    const { picked, wrote } = await pickBackupFolderAndSeed()
+    if (!picked) return
     setOfferFolder(false)
-    // Write one immediately, so the folder is not empty until tomorrow.
-    const result = await runBackup('manual', 'folder')
-    toast({ message: result.ok ? t('backupData.folderSet') : t('backup.failed') })
+    toast({ message: wrote ? t('backupData.folderSet') : t('backup.failed') })
   }
 
   function openCloseDay() {
@@ -225,6 +223,7 @@ export function TodayScreen() {
           <div>
             <div className="font-display text-base font-semibold">{t('today.autoBackupTitle')}</div>
             <p className="mt-0.5 text-sm text-ink-muted">{t('today.autoBackupBody')}</p>
+            <p className="mt-1 text-xs text-ink-muted">{t('backup.cloudHint')}</p>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button

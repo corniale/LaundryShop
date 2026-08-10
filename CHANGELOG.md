@@ -17,8 +17,10 @@
 - **Close the day is gated on a backup.** The sheet finishes only once the
   backup lands, and reports the time it did.
 - **Devices that can back up silently are asked to.** Where the File System
-  Access API exists and no folder is set, Today offers to set one; picking
-  it writes a backup immediately and enables the daily silent write.
+  Access API exists and no folder is set, Today offers to set one. Both
+  entry points — that offer and Backup & Data's "Choose backup folder" —
+  seed the folder with one backup immediately, so it is never empty until
+  the next day's first open, and both recommend a cloud-synced folder.
 - Help now states how often to back up, and that on-device snapshots are an
   undo history rather than a backup.
 
