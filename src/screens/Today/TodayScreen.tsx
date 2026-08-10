@@ -5,6 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../data/db'
 import type { Order, OrderStatus } from '../../data/types'
 import { t } from '../../i18n/strings'
+import { orderKilos } from '../../domain/orders'
 import { formatCentavos } from '../../domain/money'
 import { paidCentavos, balanceCentavos } from '../../domain/payments'
 import { ShopRail } from '../../components/WashLine'
@@ -409,7 +410,7 @@ export function TodayScreen() {
             <Stat label={t('today.ordersToday')} value={String(todayOrders.length)} />
             <Stat
               label={t('today.kilosToday')}
-              value={`${todayOrders.reduce((s, o) => s + o.kilos, 0).toFixed(1)} kg`}
+              value={`${todayOrders.reduce((s, o) => s + orderKilos(o), 0).toFixed(1)} kg`}
             />
             <Stat label={t('today.incomeToday')} value={formatCentavos(collectedToday)} tone="positive" />
             <Stat label={t('today.outstanding')} value={formatCentavos(outstanding)} tone="attention" />

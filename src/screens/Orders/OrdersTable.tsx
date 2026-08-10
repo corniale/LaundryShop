@@ -9,6 +9,7 @@
  */
 import type { Order, OrderStatus, Payment } from '../../data/types'
 import { t } from '../../i18n/strings'
+import { orderKilos, orderServiceLabel, orderServiceSortKey } from '../../domain/orders'
 import { formatCentavos } from '../../domain/money'
 import { paymentStatus } from '../../domain/payments'
 import { statusIndex, nextStatus } from '../../domain/status'
@@ -40,9 +41,9 @@ export function sortOrderRows(rows: OrderRow[], key: OrderSortKey, desc: boolean
       case 'customer':
         return r.customerName.toLowerCase()
       case 'service':
-        return r.order.serviceNameSnapshot.toLowerCase()
+        return orderServiceSortKey(r.order)
       case 'kilos':
-        return r.order.kilos
+        return orderKilos(r.order)
       case 'total':
         return r.order.totalCentavos
       case 'payment': {
@@ -171,8 +172,8 @@ export function OrdersTable({
                 >
                   <td className="whitespace-nowrap px-3 py-2.5 font-mono font-medium">{order.code}</td>
                   <td className="max-w-[12rem] truncate px-3 py-2.5">{customerName}</td>
-                  <td className="max-w-[11rem] truncate px-3 py-2.5 text-ink-muted">{order.serviceNameSnapshot}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{order.kilos}</td>
+                  <td className="max-w-[11rem] truncate px-3 py-2.5 text-ink-muted">{orderServiceLabel(order)}</td>
+                  <td className="px-3 py-2.5 text-right font-mono">{orderKilos(order)}</td>
                   <td className="px-3 py-2.5 text-right font-mono font-medium">{formatCentavos(order.totalCentavos)}</td>
                   <td className="px-3 py-2.5">
                     <span
@@ -246,9 +247,9 @@ export function OrdersTable({
                 )}
                 {!order.voidedAt && <NextButton status={order.status} onAdvance={(to) => onAdvance(order, to)} />}
               </div>
-              <div className="mt-1 truncate text-xs text-ink-muted">{order.serviceNameSnapshot}</div>
+              <div className="mt-1 truncate text-xs text-ink-muted">{orderServiceLabel(order)}</div>
               <div className={`text-xs ${overdue ? 'font-semibold text-attention-deep' : 'text-ink-muted'}`}>
-                {order.kilos} {t('orders.kg')} · {t('orders.readyBy')}: {fmtDate(order.promisedAt)}
+                {orderKilos(order)} {t('orders.kg')} · {t('orders.readyBy')}: {fmtDate(order.promisedAt)}
               </div>
             </div>
           )

@@ -20,6 +20,7 @@ import { db } from '../../data/db'
 import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
 import { balanceCentavos } from '../../domain/payments'
+import { allLines } from '../../domain/orders'
 import { Card, Button, EmptyState } from '../../components/ui'
 import { DataTable } from '../../components/DataTable'
 import { DateRangePicker, useDateRange } from '../../components/DateRangePicker'
@@ -141,14 +142,20 @@ export function ReportsScreen() {
     [buckets, rangePayments],
   )
 
-  // Income + kilos by service (range)
+  /**
+   * Income + kilos by service (range). Read per line, so an order holding
+   * two services is split between them rather than credited to whichever
+   * one happened to be first. The figure is each line's own money —
+   * order-level add-ons and discounts belong to the visit, not to a
+   * service, so they stay out of this breakdown.
+   */
   const byService = useMemo(() => {
     const map = new Map<string, { income: number; kilos: number }>()
-    for (const o of rangeOrders) {
-      const cur = map.get(o.serviceNameSnapshot) ?? { income: 0, kilos: 0 }
-      cur.income += o.totalCentavos
-      cur.kilos += o.kilos
-      map.set(o.serviceNameSnapshot, cur)
+    for (const { line } of allLines(rangeOrders)) {
+      const cur = map.get(line.serviceNameSnapshot) ?? { income: 0, kilos: 0 }
+      cur.income += line.lineTotalCentavos
+      cur.kilos += line.kilos
+      map.set(line.serviceNameSnapshot, cur)
     }
     return [...map.entries()].sort((a, b) => b[1].income - a[1].income)
   }, [rangeOrders])

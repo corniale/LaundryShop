@@ -1,15 +1,16 @@
 /**
- * Intake form, in the physical counter sequence: customer → service →
- * kilos → items → add-ons/discount → live total → promised date → payment.
+ * Intake form, in the physical counter sequence: customer → one row per
+ * service (each with its own kilos and pieces) → what is inside → add-ons
+ * and discount → live total → promised date → payment.
  * Drafts persist so a killed app loses nothing.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { addDays, format } from 'date-fns'
 import { db } from '../../data/db'
-import type { Customer, PaymentMethod } from '../../data/types'
+import type { Customer, PaymentMethod, Service } from '../../data/types'
 import { t } from '../../i18n/strings'
-import { priceOrder, formatCentavos, parsePesosInput } from '../../domain/money'
+import { priceOrder, priceLine, formatCentavos, parsePesosInput } from '../../domain/money'
 import {
   addCustomer,
   createOrder,
@@ -29,9 +30,8 @@ interface DraftState {
   customerId?: string
   walkInName: string
   customerMode: 'existing' | 'walkin'
-  serviceId?: string
-  kilos: string
-  itemCount: string
+  /** One per service in this drop-off; always at least one row. */
+  lines: Array<{ serviceId?: string; kilos: string; itemCount: string }>
   itemNotes: string
   addOns: Array<{ label: string; amount: string }>
   discount: string
@@ -43,11 +43,12 @@ interface DraftState {
   payReference: string
 }
 
+const emptyLine = { serviceId: undefined as string | undefined, kilos: '', itemCount: '' }
+
 const emptyDraft: DraftState = {
   walkInName: '',
   customerMode: 'existing',
-  kilos: '',
-  itemCount: '',
+  lines: [{ ...emptyLine }],
   itemNotes: '',
   addOns: [],
   discount: '',
@@ -93,30 +94,42 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
     return () => clearTimeout(id)
   }, [draft])
 
-  const service = services.find((s) => s.id === draft.serviceId)
+  /** Lines that are actually filled in: a service picked and kilos entered. */
+  const filledLines = useMemo(
+    () =>
+      draft.lines
+        .map((l) => ({ line: l, service: services.find((s) => s.id === l.serviceId), kilos: Number(l.kilos) || 0 }))
+        .filter((x): x is { line: (typeof draft.lines)[number]; service: Service; kilos: number } =>
+          Boolean(x.service) && x.kilos > 0,
+        ),
+    [draft.lines, services],
+  )
 
-  // Promised date auto-fills from service turnaround, stays editable
+  /**
+   * Promised date follows the slowest service in the order — the customer
+   * collects everything at once, so the whole visit is ready when the last
+   * of it is. Stays editable once set.
+   */
+  const slowestTurnaround = filledLines.reduce((max, x) => Math.max(max, x.service.turnaroundDays), 0)
   useEffect(() => {
-    if (service && !draft.promisedAt) {
-      setDraft((d) => ({
-        ...d,
-        promisedAt: format(addDays(new Date(), service.turnaroundDays), 'yyyy-MM-dd'),
-      }))
+    if (slowestTurnaround > 0 && !draft.promisedAt) {
+      setDraft((d) => ({ ...d, promisedAt: format(addDays(new Date(), slowestTurnaround), 'yyyy-MM-dd') }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [service?.id])
+  }, [slowestTurnaround])
 
-  const kilos = Number(draft.kilos) || 0
   const pricing = useMemo(() => {
-    if (!service || kilos <= 0) return null
+    if (filledLines.length === 0) return null
     return priceOrder({
-      kilos,
-      pricePerKgCentavos: service.pricePerKgCentavos,
-      minimumKg: service.minimumKg,
+      lines: filledLines.map((x) => ({
+        kilos: x.kilos,
+        pricePerKgCentavos: x.service.pricePerKgCentavos,
+        minimumKg: x.service.minimumKg,
+      })),
       addOns: draft.addOns.map((a) => ({ amountCentavos: parsePesosInput(a.amount) ?? 0 })),
       discountCentavos: parsePesosInput(draft.discount) ?? 0,
     })
-  }, [service, kilos, draft.addOns, draft.discount])
+  }, [filledLines, draft.addOns, draft.discount])
 
   // Results appear as you type; a blank box shows nothing rather than a
   // list of arbitrary names.
@@ -152,14 +165,13 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
 
   const canSave =
     !!currentUser &&
-    !!service &&
-    kilos > 0 &&
+    filledLines.length > 0 &&
     pricing !== null &&
     (draft.customerMode === 'walkin' ? draft.walkInName.trim().length > 0 : !!draft.customerId) &&
     ((parsePesosInput(draft.discount) ?? 0) === 0 || draft.discountReason.trim().length > 0)
 
   async function handleSave() {
-    if (!canSave || !pricing || !service || !currentUser || saving) return
+    if (!canSave || !pricing || !currentUser || saving) return
     setSaving(true)
     try {
       const payAmount =
@@ -171,9 +183,13 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
       const input: NewOrderInput = {
         customerId: draft.customerMode === 'existing' ? draft.customerId : undefined,
         walkInName: draft.customerMode === 'walkin' ? draft.walkInName.trim() : undefined,
-        serviceId: service.id,
-        kilos,
-        itemCount: draft.itemCount ? Number(draft.itemCount) : undefined,
+        lines: filledLines.map((x, i) => ({
+          serviceId: x.service.id,
+          kilos: x.kilos,
+          itemCount: x.line.itemCount ? Number(x.line.itemCount) : undefined,
+          billedKilos: pricing.lines[i].billedKilos,
+          lineTotalCentavos: pricing.lines[i].lineTotalCentavos,
+        })),
         itemNotes: draft.itemNotes.trim() || undefined,
         addOns: draft.addOns
           .filter((a) => a.label.trim() && (parsePesosInput(a.amount) ?? 0) > 0)
@@ -299,52 +315,90 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
         )}
       </section>
 
-      {/* 2 · Service */}
-      <section>
-        <div className="mb-1 text-sm font-medium text-ink-muted">{t('orders.service')}</div>
-        <div className="flex flex-wrap gap-2">
-          {services.map((s) => (
-            <Chip
-              key={s.id}
-              selected={draft.serviceId === s.id}
-              onClick={() => setDraft((d) => ({ ...d, serviceId: s.id, promisedAt: '' }))}
-            >
-              {s.name} · {formatCentavos(s.pricePerKgCentavos)}
-              {t('services.perKg')}
-            </Chip>
-          ))}
-        </div>
+      {/* 2 · Services — one row per service in this drop-off */}
+      <section className="flex flex-col gap-3">
+        {draft.lines.map((line, i) => {
+          const svc = services.find((s) => s.id === line.serviceId)
+          const kg = Number(line.kilos) || 0
+          const priced = svc && kg > 0 ? priceLine({ kilos: kg, pricePerKgCentavos: svc.pricePerKgCentavos, minimumKg: svc.minimumKg }) : null
+          const update = (patch: Partial<(typeof draft.lines)[number]>) =>
+            setDraft((d) => ({ ...d, lines: d.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) }))
+          return (
+            <div key={i} className="rounded-card border border-line p-3">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="label-caps">
+                  {draft.lines.length > 1 ? t('orders.serviceLine', { n: i + 1 }) : t('orders.service')}
+                </span>
+                {draft.lines.length > 1 && (
+                  <button
+                    className="min-h-touch px-2 text-sm font-semibold text-attention-deep"
+                    aria-label={t('orders.removeService')}
+                    onClick={() => setDraft((d) => ({ ...d, lines: d.lines.filter((_, j) => j !== i) }))}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {services.map((s) => (
+                  <Chip
+                    key={s.id}
+                    selected={line.serviceId === s.id}
+                    onClick={() => update({ serviceId: s.id })}
+                  >
+                    {s.name} · {formatCentavos(s.pricePerKgCentavos)}
+                    {t('services.perKg')}
+                  </Chip>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-[1fr_110px] gap-2">
+                <Field label={t('orders.kilos')}>
+                  <Input
+                    inputMode="decimal"
+                    step="0.1"
+                    type="number"
+                    min="0"
+                    className="font-mono !text-xl"
+                    value={line.kilos}
+                    onChange={(e) => update({ kilos: e.target.value })}
+                  />
+                </Field>
+                <Field label={t('orders.itemCount')}>
+                  <Input
+                    inputMode="numeric"
+                    type="number"
+                    min="0"
+                    className="font-mono"
+                    value={line.itemCount}
+                    onChange={(e) => update({ itemCount: e.target.value })}
+                  />
+                </Field>
+              </div>
+              {priced && (
+                <div className="mt-1 text-right font-mono text-sm text-ink-muted">
+                  {priced.billedKilos > kg && (
+                    <span className="mr-2 text-xs">{t('orders.billedKilos', { n: priced.billedKilos })}</span>
+                  )}
+                  {formatCentavos(priced.lineTotalCentavos)}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        <Button
+          variant="secondary"
+          className="self-start !py-2 text-sm"
+          onClick={() => setDraft((d) => ({ ...d, lines: [...d.lines, { ...emptyLine }] }))}
+        >
+          {t('orders.addService')}
+        </Button>
       </section>
 
-      {/* 3 · Kilos — large, keypad friendly */}
-      <Field label={t('orders.kilos')}>
-        <Input
-          inputMode="decimal"
-          step="0.1"
-          type="number"
-          min="0"
-          className="font-mono !text-xl"
-          value={draft.kilos}
-          onChange={(e) => setDraft((d) => ({ ...d, kilos: e.target.value }))}
-        />
+      {/* 4 · What is inside — one note for the whole drop-off; the piece
+             count sits on each service line, where it can be counted. */}
+      <Field label={t('orders.itemNotes')} hint={t('orders.itemPrompt')}>
+        <Input value={draft.itemNotes} onChange={(e) => setDraft((d) => ({ ...d, itemNotes: e.target.value }))} />
       </Field>
-
-      {/* 4 · Item count + notes */}
-      <div className="grid grid-cols-[110px_1fr] gap-2">
-        <Field label={t('orders.itemCount')}>
-          <Input
-            inputMode="numeric"
-            type="number"
-            min="0"
-            className="font-mono"
-            value={draft.itemCount}
-            onChange={(e) => setDraft((d) => ({ ...d, itemCount: e.target.value }))}
-          />
-        </Field>
-        <Field label={t('orders.itemNotes')} hint={t('orders.itemPrompt')}>
-          <Input value={draft.itemNotes} onChange={(e) => setDraft((d) => ({ ...d, itemNotes: e.target.value }))} />
-        </Field>
-      </div>
 
       {/* 5 · Add-ons + discount */}
       <section>

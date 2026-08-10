@@ -11,6 +11,7 @@ import { db } from '../../data/db'
 import type { PaymentMethod } from '../../data/types'
 import { t } from '../../i18n/strings'
 import { formatCentavos, parsePesosInput } from '../../domain/money'
+import { orderItemCount } from '../../domain/orders'
 import { paidCentavos, balanceCentavos, paymentStatus } from '../../domain/payments'
 import {
   setOrderStatus,
@@ -128,14 +129,23 @@ export function OrderDetailScreen() {
         <div className="flex items-baseline justify-between">
           <div>
             <div className="font-semibold">{customerName}</div>
-            <div className="text-sm text-ink-muted">
-              {order.serviceNameSnapshot} · {order.kilos} {t('orders.kg')} ·{' '}
-              {formatCentavos(order.pricePerKgSnapshot)}
-              {t('services.perKg')}
-            </div>
-            {order.itemCount != null && (
+            {/* One row per service, each with the price it was quoted at */}
+            {order.lines.map((l, i) => (
+              <div key={i} className="text-sm text-ink-muted">
+                {l.serviceNameSnapshot} · {l.kilos} {t('orders.kg')} ·{' '}
+                {formatCentavos(l.pricePerKgSnapshot)}
+                {t('services.perKg')}
+                {l.billedKilos > l.kilos && (
+                  <span className="ml-1 text-xs">
+                    ({t('orders.billedKilos', { n: l.billedKilos })})
+                  </span>
+                )}
+                <span className="ml-2 font-mono text-ink">{formatCentavos(l.lineTotalCentavos)}</span>
+              </div>
+            ))}
+            {orderItemCount(order) != null && (
               <div className="text-sm text-ink-muted">
-                {order.itemCount} {t('orders.pcs')} — {order.itemNotes}
+                {orderItemCount(order)} {t('orders.pcs')} — {order.itemNotes}
               </div>
             )}
           </div>

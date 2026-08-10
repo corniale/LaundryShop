@@ -75,16 +75,32 @@ export interface OrderAddOn {
   amountCentavos: number
 }
 
+/**
+ * One service within an order. A customer can drop off wash-dry-fold and
+ * dry cleaning in the same visit, so the service, its price and its kilos
+ * belong to the line rather than to the order. Prices and minimums are
+ * snapshotted here for the same reason they always were: editing a service
+ * later must never restate a past order.
+ */
+export interface OrderLine {
+  serviceId: string
+  serviceNameSnapshot: string
+  pricePerKgSnapshot: number
+  minimumKgSnapshot?: number
+  kilos: number
+  itemCount?: number
+  /** Kilos actually charged for, after the service minimum. */
+  billedKilos: number
+  lineTotalCentavos: number
+}
+
 export interface Order {
   id: string
   code: string
   customerId?: string
   walkInName?: string
-  serviceId: string
-  serviceNameSnapshot: string
-  pricePerKgSnapshot: number
-  kilos: number
-  itemCount?: number
+  /** At least one. Derived totals live in src/domain/orders.ts. */
+  lines: OrderLine[]
   itemNotes?: string
   addOns: OrderAddOn[]
   discountCentavos: number

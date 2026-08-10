@@ -11,6 +11,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../data/db'
 import type { Order, OrderStatus } from '../../data/types'
 import { t } from '../../i18n/strings'
+import { orderKilos } from '../../domain/orders'
 import { formatCentavos } from '../../domain/money'
 import { paymentStatus } from '../../domain/payments'
 import { STATUS_ORDER, nextStatus } from '../../domain/status'
@@ -288,7 +289,7 @@ export function OrdersScreen() {
           {STATUS_ORDER.map((s) => {
             const col = boardColumns[s]
             const next = nextStatus(s)
-            const kilos = col.reduce((sum, o) => sum + o.kilos, 0)
+            const kilos = col.reduce((sum, o) => sum + orderKilos(o), 0)
             return (
               <section
                 key={s}
@@ -350,7 +351,7 @@ export function OrdersScreen() {
                             />
                           )}
                           <span>
-                            {o.kilos} {t('orders.kg')}
+                            {orderKilos(o)} {t('orders.kg')}
                           </span>
                           <span>·</span>
                           <span className={overdue ? 'font-semibold text-attention-deep' : ''}>
