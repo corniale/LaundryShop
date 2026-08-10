@@ -167,6 +167,8 @@ export async function seedDemoData(): Promise<void> {
     walkInName?: string
     service?: Service
     kilos: number
+    /** A second service in the same drop-off, as real customers do. */
+    also?: { service: Service; kilos: number }
     status: OrderStatus
     payment: 'full' | 'partial' | 'none'
     method?: PaymentMethod
@@ -182,9 +184,13 @@ export async function seedDemoData(): Promise<void> {
     const addOns =
       rand() < 0.25 ? [{ label: 'Plastic bag', amountCentavos: 1000 }] : []
     const discount = rand() < 0.1 ? 2000 : 0
+    const parts = [{ service: svc, kilos: opts.kilos }, ...(opts.also ? [opts.also] : [])]
     const pricing = priceOrder({
-      kilos: opts.kilos,
-      pricePerKgCentavos: svc.pricePerKgCentavos,
+      lines: parts.map((p) => ({
+        kilos: p.kilos,
+        pricePerKgCentavos: p.service.pricePerKgCentavos,
+        minimumKg: p.service.minimumKg,
+      })),
       addOns,
       discountCentavos: discount,
     })
@@ -202,11 +208,16 @@ export async function seedDemoData(): Promise<void> {
       code: `ORD-${orderNum}`,
       customerId: opts.customerIdx !== undefined ? customers[opts.customerIdx].id : undefined,
       walkInName: opts.walkInName,
-      serviceId: svc.id,
-      serviceNameSnapshot: svc.name,
-      pricePerKgSnapshot: svc.pricePerKgCentavos,
-      kilos: opts.kilos,
-      itemCount: Math.round(opts.kilos * 3),
+      lines: parts.map((p, i) => ({
+        serviceId: p.service.id,
+        serviceNameSnapshot: p.service.name,
+        pricePerKgSnapshot: p.service.pricePerKgCentavos,
+        minimumKgSnapshot: p.service.minimumKg,
+        kilos: p.kilos,
+        itemCount: Math.round(p.kilos * 3),
+        billedKilos: pricing.lines[i].billedKilos,
+        lineTotalCentavos: pricing.lines[i].lineTotalCentavos,
+      })),
       itemNotes: pick(['T-shirts, pantalon', 'Damit pambahay', 'Uniforms, bedsheet', 'Mixed na damit', 'Kumot at unan']),
       addOns,
       discountCentavos: discount,
@@ -278,11 +289,17 @@ export async function seedDemoData(): Promise<void> {
   // Today: at least 2 in each of the five statuses
   makeOrder({ daysAgo: 0, customerIdx: 0, kilos: 12.0, service: services[1], status: 'received', payment: 'none', byUser: staff })
   makeOrder({ daysAgo: 0, walkInName: 'Aling Nena', kilos: 5.0, status: 'received', payment: 'partial', byUser: staff })
-  makeOrder({ daysAgo: 0, customerIdx: 1, kilos: 8.0, status: 'washing', payment: 'none', byUser: staff })
+  makeOrder({
+    daysAgo: 0, customerIdx: 1, kilos: 8.0, also: { service: services[2], kilos: 2.0 },
+    status: 'washing', payment: 'none', byUser: staff,
+  })
   makeOrder({ daysAgo: 0, customerIdx: 6, kilos: 6.5, service: services[1], status: 'washing', payment: 'full', byUser: owner })
   makeOrder({ daysAgo: 0, customerIdx: 2, kilos: 10.0, status: 'drying', payment: 'none', byUser: staff })
   makeOrder({ daysAgo: 0, customerIdx: 7, kilos: 4.5, service: services[4], status: 'drying', payment: 'full', byUser: staff })
-  makeOrder({ daysAgo: 1, customerIdx: 8, kilos: 7.0, status: 'ready', payment: 'full', byUser: owner })
+  makeOrder({
+    daysAgo: 1, customerIdx: 8, kilos: 7.0, also: { service: services[3], kilos: 3.5 },
+    status: 'ready', payment: 'full', byUser: owner,
+  })
   makeOrder({ daysAgo: 1, customerIdx: 9, kilos: 5.5, service: services[3], status: 'ready', payment: 'none', byUser: staff })
   makeOrder({ daysAgo: 1, customerIdx: 10, kilos: 6.0, status: 'claimed', payment: 'full', byUser: staff })
   makeOrder({ daysAgo: 1, customerIdx: 11, kilos: 3.5, status: 'claimed', payment: 'full', byUser: owner })

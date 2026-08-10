@@ -17,13 +17,25 @@ async function makeBackup(schemaVersion = SCHEMA_VERSION) {
     users: [],
     customers: [],
     services: [],
+    // v1/v2 orders held one service inline; v3 holds a list of lines.
     orders: [
-      {
-        id: 'o1', code: 'ORD-0001', serviceId: 'sv1', serviceNameSnapshot: 'Wash & Fold',
-        pricePerKgSnapshot: 3500, kilos: 5, addOns: [], discountCentavos: 0,
-        subtotalCentavos: 17500, totalCentavos: 17500, status: 'received' as const,
-        receivedAt: now, promisedAt: now, createdBy: 'u1', updatedAt: now,
-      },
+      schemaVersion < 3
+        ? {
+            id: 'o1', code: 'ORD-0001', serviceId: 'sv1', serviceNameSnapshot: 'Wash & Fold',
+            pricePerKgSnapshot: 3500, kilos: 5, addOns: [], discountCentavos: 0,
+            subtotalCentavos: 17500, totalCentavos: 17500, status: 'received' as const,
+            receivedAt: now, promisedAt: now, createdBy: 'u1', updatedAt: now,
+          }
+        : {
+            id: 'o1', code: 'ORD-0001',
+            lines: [{
+              serviceId: 'sv1', serviceNameSnapshot: 'Wash & Fold', pricePerKgSnapshot: 3500,
+              kilos: 5, billedKilos: 5, lineTotalCentavos: 17500,
+            }],
+            addOns: [], discountCentavos: 0,
+            subtotalCentavos: 17500, totalCentavos: 17500, status: 'received' as const,
+            receivedAt: now, promisedAt: now, createdBy: 'u1', updatedAt: now,
+          },
     ],
     statusEvents: [],
     payments: [],
@@ -105,5 +117,38 @@ describe('schema migration', () => {
     const { backup, notes } = migrateBackup(result.backup)
     expect(notes).toEqual([])
     expect(backup.data.expectedUseRules[0].basis).toBe('piece')
+  })
+
+  it('turns a v2 order into a single-line order (v2 → v3)', async () => {
+    const result = await validateBackupJson(JSON.stringify(await makeBackup(2)))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const { backup, notes } = migrateBackup(result.backup)
+    const order = backup.data.orders[0]
+    expect(order.lines).toEqual([
+      {
+        serviceId: 'sv1',
+        serviceNameSnapshot: 'Wash & Fold',
+        pricePerKgSnapshot: 3500,
+        kilos: 5,
+        itemCount: undefined,
+        billedKilos: 5,
+        lineTotalCentavos: 17500,
+      },
+    ])
+    expect(order.serviceId).toBeUndefined()
+    expect(order.kilos).toBeUndefined()
+    expect(notes.join(' ')).toMatch(/one line per service/i)
+  })
+
+  it('carries a v1 order all the way through both steps', async () => {
+    const result = await validateBackupJson(JSON.stringify(await makeBackup(1)))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const { backup, notes } = migrateBackup(result.backup)
+    expect(backup.data.orders[0].lines).toHaveLength(1)
+    expect(backup.data.expectedUseRules[0].basis).toBe('kg')
+    expect(notes).toHaveLength(2)
   })
 })

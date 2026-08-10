@@ -21,6 +21,7 @@ import {
   usageCostCentavos,
   expectedQty,
 } from '../../domain/inventory'
+import { orderHasService, kilosForService, itemCountForService } from '../../domain/orders'
 import {
   saveInventoryItem,
   recordStockMove,
@@ -256,9 +257,14 @@ export function InventoryScreen() {
       if (itemRules.length > 0) {
         expected = 0
         for (const rule of itemRules) {
-          const forService = orders.filter(
-            (o) => !o.voidedAt && o.serviceId === rule.serviceId && inRange(o.receivedAt, from, to),
-          )
+          // An order can contain several services, so only this service's
+          // share of it counts towards this rule.
+          const forService = orders
+            .filter((o) => !o.voidedAt && orderHasService(o, rule.serviceId) && inRange(o.receivedAt, from, to))
+            .map((o) => ({
+              kilos: kilosForService(o, rule.serviceId),
+              itemCount: itemCountForService(o, rule.serviceId),
+            }))
           expected += expectedQty(forService, rule.basis ?? 'kg', rule.qtyPer)
         }
       }

@@ -29,15 +29,27 @@ export function parsePesosInput(input: string): number | null {
   return Math.round(value * 100)
 }
 
-export interface PricingInput {
+export interface PricingLineInput {
   kilos: number
   pricePerKgCentavos: number
   minimumKg?: number
+}
+
+export interface PricedLine {
+  billedKilos: number
+  lineTotalCentavos: number
+}
+
+export interface PricingInput {
+  /** One entry per service in the order. */
+  lines: PricingLineInput[]
   addOns: Array<{ amountCentavos: number }>
   discountCentavos: number
 }
 
 export interface PricingResult {
+  lines: PricedLine[]
+  /** Summed across lines, after each line's own minimum. */
   billedKilos: number
   baseCentavos: number
   addOnsCentavos: number
@@ -46,14 +58,25 @@ export interface PricingResult {
 }
 
 /**
- * Price an order. kilos * price/kg is computed in centavos and rounded
- * once — no float drift. A service minimum bumps the billed kilos.
+ * Price one service line. kilos * price/kg is computed in centavos and
+ * rounded once — no float drift. A service minimum bumps the billed kilos.
+ */
+export function priceLine(input: PricingLineInput): PricedLine {
+  const billedKilos = Math.max(input.kilos, input.minimumKg ?? 0)
+  return { billedKilos, lineTotalCentavos: Math.round(billedKilos * input.pricePerKgCentavos) }
+}
+
+/**
+ * Price a whole order. Each line carries its own price and minimum, because
+ * a minimum belongs to the service and not to the visit; add-ons and the
+ * discount sit at the order level, where a customer negotiates them.
  */
 export function priceOrder(input: PricingInput): PricingResult {
-  const billedKilos = Math.max(input.kilos, input.minimumKg ?? 0)
-  const baseCentavos = Math.round(billedKilos * input.pricePerKgCentavos)
+  const lines = input.lines.map(priceLine)
+  const billedKilos = lines.reduce((sum, l) => sum + l.billedKilos, 0)
+  const baseCentavos = lines.reduce((sum, l) => sum + l.lineTotalCentavos, 0)
   const addOnsCentavos = input.addOns.reduce((sum, a) => sum + a.amountCentavos, 0)
   const subtotalCentavos = baseCentavos + addOnsCentavos
   const totalCentavos = Math.max(0, subtotalCentavos - input.discountCentavos)
-  return { billedKilos, baseCentavos, addOnsCentavos, subtotalCentavos, totalCentavos }
+  return { lines, billedKilos, baseCentavos, addOnsCentavos, subtotalCentavos, totalCentavos }
 }

@@ -17,7 +17,7 @@ import type {
   Draft,
 } from './types'
 
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 export class LaundryDB extends Dexie {
   shop!: Table<Shop, string>
@@ -69,6 +69,40 @@ export class LaundryDB extends Dexie {
             r.qtyPer = r.qtyPerKg ?? 0
             r.basis = 'kg'
             delete r.qtyPerKg
+          })
+      })
+
+    // v3: an order can hold more than one service, so the service, its
+    // price and its kilos move onto a line. The serviceId index goes with
+    // them — nothing queried by it, and it cannot describe a list.
+    this.version(3)
+      .stores({
+        orders: 'id, code, customerId, status, receivedAt, promisedAt, updatedAt, [status+promisedAt]',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('orders')
+          .toCollection()
+          .modify((o: Record<string, unknown>) => {
+            if (Array.isArray(o.lines)) return
+            const kilos = (o.kilos as number) ?? 0
+            const price = (o.pricePerKgSnapshot as number) ?? 0
+            o.lines = [
+              {
+                serviceId: o.serviceId,
+                serviceNameSnapshot: o.serviceNameSnapshot,
+                pricePerKgSnapshot: price,
+                kilos,
+                itemCount: o.itemCount,
+                billedKilos: kilos,
+                lineTotalCentavos: Math.round(kilos * price),
+              },
+            ]
+            delete o.serviceId
+            delete o.serviceNameSnapshot
+            delete o.pricePerKgSnapshot
+            delete o.kilos
+            delete o.itemCount
           })
       })
   }

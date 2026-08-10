@@ -58,6 +58,34 @@ export function migrateBackup(backup: BackupFile): { backup: BackupFile; notes: 
         if (touched > 0) notes.push(`Expected-use rules read as per kilo (${touched})`)
         break
       }
+      case 2: {
+        // v2 orders held one service; each becomes a single line.
+        let touched = 0
+        for (const order of backup.data.orders) {
+          if (Array.isArray(order.lines)) continue
+          const kilos = order.kilos ?? 0
+          const price = order.pricePerKgSnapshot ?? 0
+          order.lines = [
+            {
+              serviceId: order.serviceId ?? '',
+              serviceNameSnapshot: order.serviceNameSnapshot ?? '',
+              pricePerKgSnapshot: price,
+              kilos,
+              itemCount: order.itemCount,
+              billedKilos: kilos,
+              lineTotalCentavos: Math.round(kilos * price),
+            },
+          ]
+          delete order.serviceId
+          delete order.serviceNameSnapshot
+          delete order.pricePerKgSnapshot
+          delete order.kilos
+          delete order.itemCount
+          touched++
+        }
+        if (touched > 0) notes.push(`Orders now hold one line per service (${touched})`)
+        break
+      }
       default:
         break
     }

@@ -14,6 +14,12 @@
 - Inventory: expected-use rules are a grid (service × item) instead of a
   dialog, and a rule can be measured per kilo, per piece, or per order.
   Schema version 2.
+- **An order can hold more than one service.** A customer dropping off
+  wash-dry-fold and dry cleaning in the same visit is one order with one
+  line per service, each with its own kilos, pieces, quoted price and
+  minimum. Reports split income and kilos per line, and expected-use rules
+  count only their own service's share of a mixed order. Schema version 3;
+  every existing order becomes a single-line order on upgrade.
 - **Close the day is gated on a backup.** The sheet finishes only once the
   backup lands, and reports the time it did.
 - **Devices that can back up silently are asked to.** Where the File System

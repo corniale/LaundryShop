@@ -9,6 +9,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../data/db'
 import type { Customer } from '../../data/types'
 import { t } from '../../i18n/strings'
+import { orderKilos, orderServiceLabel } from '../../domain/orders'
 import { formatCentavos } from '../../domain/money'
 import { balanceCentavos, paymentStatus } from '../../domain/payments'
 import { addCustomer, updateCustomer, archiveCustomer, findCustomerByContact } from '../../data/repository'
@@ -233,7 +234,7 @@ export function CustomersScreen() {
                 <span className="font-mono">{formatCentavos(o.totalCentavos)}</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-ink-muted">
-                {fmtDate(o.receivedAt)} · {o.serviceNameSnapshot} · {o.kilos} kg
+                {fmtDate(o.receivedAt)} · {orderServiceLabel(o)} · {orderKilos(o)} kg
                 <span className={`rounded-pill px-2 py-0.5 font-semibold ${payToneClass(pStatus)}`}>
                   {t(`pay.${pStatus}` as 'pay.unpaid')}
                 </span>

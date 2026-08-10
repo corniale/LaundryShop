@@ -11,6 +11,7 @@ import type {
   Customer,
   Service,
   Order,
+  OrderLine,
   StatusEvent,
   Payment,
   InventoryItem,
@@ -24,6 +25,7 @@ import type {
 import { canTransition, isBackward, statusIndex, STATUS_ORDER } from '../domain/status'
 import { buildReversal } from '../domain/payments'
 import { recountDelta } from '../domain/inventory'
+import { orderKilos } from '../domain/orders'
 
 const now = () => new Date().toISOString()
 
@@ -188,12 +190,20 @@ export async function saveService(
 
 // ── Orders ────────────────────────────────────────────────────────
 
-export interface NewOrderInput {
-  customerId?: string
-  walkInName?: string
+export interface NewOrderLineInput {
   serviceId: string
   kilos: number
   itemCount?: number
+  /** Billed kilos and money, priced by domain/money before it gets here. */
+  billedKilos: number
+  lineTotalCentavos: number
+}
+
+export interface NewOrderInput {
+  customerId?: string
+  walkInName?: string
+  /** One per service; at least one. */
+  lines: NewOrderLineInput[]
   itemNotes?: string
   addOns: Array<{ label: string; amountCentavos: number }>
   discountCentavos: number
@@ -218,8 +228,24 @@ export async function createOrder(input: NewOrderInput, byUserId: string): Promi
       const code = `${shop.orderCodePrefix}-${String(num).padStart(4, '0')}`
       await db.shop.put({ ...shop, nextOrderNumber: num + 1, updatedAt: now() })
 
-      const service = await db.services.get(input.serviceId)
-      if (!service) throw new Error('Service not found')
+      if (input.lines.length === 0) throw new Error('Order needs at least one service')
+      // Snapshot each service as it stands right now: editing a price later
+      // must never restate an order that has already been quoted.
+      const lines: OrderLine[] = []
+      for (const l of input.lines) {
+        const service = await db.services.get(l.serviceId)
+        if (!service) throw new Error('Service not found')
+        lines.push({
+          serviceId: service.id,
+          serviceNameSnapshot: service.name,
+          pricePerKgSnapshot: service.pricePerKgCentavos,
+          minimumKgSnapshot: service.minimumKg,
+          kilos: l.kilos,
+          itemCount: l.itemCount,
+          billedKilos: l.billedKilos,
+          lineTotalCentavos: l.lineTotalCentavos,
+        })
+      }
 
       const at = now()
       const order: Order = {
@@ -227,11 +253,7 @@ export async function createOrder(input: NewOrderInput, byUserId: string): Promi
         code,
         customerId: input.customerId,
         walkInName: input.walkInName,
-        serviceId: service.id,
-        serviceNameSnapshot: service.name,
-        pricePerKgSnapshot: service.pricePerKgCentavos,
-        kilos: input.kilos,
-        itemCount: input.itemCount,
+        lines,
         itemNotes: input.itemNotes,
         addOns: input.addOns,
         discountCentavos: input.discountCentavos,
@@ -254,7 +276,7 @@ export async function createOrder(input: NewOrderInput, byUserId: string): Promi
         at,
         byUserId,
       })
-      await audit(byUserId, 'create', 'order', order.id, `Created order ${code} (${input.kilos} kg)`)
+      await audit(byUserId, 'create', 'order', order.id, `Created order ${code} (${orderKilos(order)} kg)`)
 
       if (input.initialPayment && input.initialPayment.amountCentavos > 0) {
         const p: Payment = {

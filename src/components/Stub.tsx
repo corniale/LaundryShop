@@ -5,6 +5,7 @@
 import type { Order, Payment, Shop } from '../data/types'
 import { formatCentavos } from '../domain/money'
 import { paidCentavos, balanceCentavos } from '../domain/payments'
+import { orderItemCount } from '../domain/orders'
 import { fmtDateFull } from '../app/format'
 import { t } from '../i18n/strings'
 import { Button } from './ui'
@@ -19,8 +20,9 @@ export function stubText(shop: Shop, order: Order, payments: Payment[], customer
     '--------------------------',
     `${t('stub.orderCode')}: ${order.code}`,
     customerName,
-    `${order.serviceNameSnapshot} · ${order.kilos} kg`,
-    order.itemCount ? `${order.itemCount} pcs — ${order.itemNotes ?? ''}` : '',
+    // One line per service, so the customer's copy shows what they paid for.
+    ...order.lines.map((l) => `${l.serviceNameSnapshot} · ${l.kilos} kg`),
+    orderItemCount(order) ? `${orderItemCount(order)} pcs — ${order.itemNotes ?? ''}` : '',
     '--------------------------',
     `${t('orders.total')}: ${formatCentavos(order.totalCentavos)}`,
     `${t('orders.paid')}: ${formatCentavos(paid)}`,

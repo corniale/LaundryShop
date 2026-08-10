@@ -66,15 +66,30 @@ export const serviceSchema = z.object({
 
 export const orderStatusSchema = z.enum(['received', 'washing', 'drying', 'ready', 'claimed'])
 
+export const orderLineSchema = z.object({
+  serviceId: z.string(),
+  serviceNameSnapshot: z.string(),
+  pricePerKgSnapshot: nonNegCentavos,
+  minimumKgSnapshot: z.number().min(0).optional(),
+  kilos: z.number().min(0),
+  itemCount: z.number().int().min(0).optional(),
+  billedKilos: z.number().min(0),
+  lineTotalCentavos: centavos,
+})
+
+// lines is optional here and required in the type: a v1/v2 backup carries the
+// single-service fields instead, and migrateBackup builds the line from them
+// before anything reads the order.
 export const orderSchema = z.object({
   id: z.string(),
   code: z.string().min(1),
   customerId: z.string().optional(),
   walkInName: z.string().optional(),
-  serviceId: z.string(),
-  serviceNameSnapshot: z.string(),
-  pricePerKgSnapshot: nonNegCentavos,
-  kilos: z.number().min(0),
+  lines: z.array(orderLineSchema).optional(),
+  serviceId: z.string().optional(),
+  serviceNameSnapshot: z.string().optional(),
+  pricePerKgSnapshot: nonNegCentavos.optional(),
+  kilos: z.number().min(0).optional(),
   itemCount: z.number().int().min(0).optional(),
   itemNotes: z.string().optional(),
   addOns: z.array(z.object({ label: z.string(), amountCentavos: centavos })),
