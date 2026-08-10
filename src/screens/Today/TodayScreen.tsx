@@ -12,6 +12,7 @@ import { Card, Stat, Button, Sheet } from '../../components/ui'
 import { DataTable } from '../../components/DataTable'
 import { backupHealth, promptLevel, markPrompted, storageUsage } from '../../backup/scheduler'
 import { runBackup, detectCapabilities, hasBackupFolder, pickBackupFolderAndSeed } from '../../backup/destinations'
+import { needsSafariInstall, readPlatform } from '../../app/platform'
 import { useToast } from '../../components/Toast'
 import { fmtDate, fmtTime, todayRange, inRange } from '../../app/format'
 import { buildReadyMessage, sendReadyMessage } from '../../components/Stub'
@@ -19,6 +20,8 @@ import { STATUS_ORDER } from '../../domain/status'
 
 /** Per-device UI state, not shop data — deliberately not in the backup. */
 const FOLDER_OFFER_DISMISSED = 'backup-folder-offer-dismissed'
+
+const wrongIOSBrowser = needsSafariInstall(readPlatform())
 
 export function TodayScreen() {
   const navigate = useNavigate()
@@ -206,9 +209,12 @@ export function TodayScreen() {
         </Card>
       )}
 
+      {/* On iOS the generic "install it" advice is wrong outside Safari:
+          only Safari's Add to Home Screen gives the storage that keeps the
+          shop's records from being evicted. Say the specific thing. */}
       {appMeta && !appMeta.storagePersisted && !appMeta.demoMode && (
         <div className="rounded-card bg-attention-soft px-4 py-3 text-sm text-attention-deep">
-          {t('today.persistWarning')}
+          {wrongIOSBrowser ? t('today.iosSafariWarning') : t('today.persistWarning')}
         </div>
       )}
 
@@ -455,7 +461,7 @@ export function TodayScreen() {
           </p>
           {appMeta?.backupStrategy === 'share' && appMeta.shareDestinationName && (
             <p className="text-sm font-medium text-primary-deep">
-              I-save sa {appMeta.shareDestinationName}
+              {t('backup.saveTo', { dest: appMeta.shareDestinationName })}
             </p>
           )}
           <Button onClick={() => void backupNow()}>{t('backup.prompt.action')}</Button>

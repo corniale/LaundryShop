@@ -23,6 +23,14 @@
   the next day's first open, and both recommend a cloud-synced folder.
 - Help now states how often to back up, and that on-device snapshots are an
   undo history rather than a backup.
+- **iOS outside Safari is called out.** Every iOS browser is WebKit, so a
+  non-Safari one has no folder API and — more importantly — no way to reach
+  the standalone install that stops iOS evicting the shop's records. Today
+  now says "open this in Safari and use Add to Home Screen" in that case,
+  instead of the generic install advice that does not apply there.
+- The stale-backup prompt's "Save it to <destination>" reminder was a
+  hardcoded Taglish string in the component; it is now a proper entry with
+  an English form.
 
 ## 1.0.0 — 2026-08-08
 

@@ -88,6 +88,10 @@ const strings = {
   'today.kilosToday': { tl: 'Kilo ngayon', en: 'Kilos today' },
   'today.collectionsByMethod': { tl: 'Koleksyon kada paraan', en: 'Collections by method' },
   'today.runBackupNow': { tl: 'Mag-backup ngayon', en: 'Back up now' },
+  'today.iosSafariWarning': {
+    tl: 'Sa iPhone, buksan ito sa Safari at i-Add to Home Screen. Sa ibang browser, puwedeng mabura ng iOS ang records ng shop.',
+    en: 'On iPhone, open this in Safari and use Add to Home Screen. In any other browser iOS can erase the shop’s records.',
+  },
   'today.persistWarning': {
     tl: 'Hindi pa protektado ang data sa phone na ito. I-install ang app sa home screen.',
     en: 'Data on this phone is not yet protected. Install the app to the home screen.',
@@ -112,6 +116,7 @@ const strings = {
   },
   'backup.prompt.action': { tl: 'I-backup ngayon', en: 'Back up now' },
   'backup.prompt.later': { tl: 'Mamaya na', en: 'Later' },
+  'backup.saveTo': { tl: 'I-save sa {dest}', en: 'Save it to {dest}' },
   'backup.done': { tl: 'Na-backup na ang data.', en: 'Backup saved.' },
   'backup.failed': { tl: 'Hindi natapos ang backup. Subukan ulit.', en: 'Backup failed. Try again.' },
 
