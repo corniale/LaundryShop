@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { format } from 'date-fns'
 import { db } from '../../data/db'
 import type { Order, OrderStatus } from '../../data/types'
 import { t } from '../../i18n/strings'
@@ -22,7 +23,9 @@ import { statusLabel } from '../../components/WashLine'
 import { StageIcon } from '../../components/StatusRail'
 import { IconCheck } from '@tabler/icons-react'
 import { Chip, Input, Button, EmptyState, Sheet } from '../../components/ui'
-import { fmtDate } from '../../app/format'
+import { fmtDate, downloadCsv } from '../../app/format'
+import { toCsv } from '../../domain/csv'
+import { orderCsvRows, ORDER_CSV_HEADER } from '../../domain/ordersCsv'
 import { OrderIntake } from './OrderIntake'
 import { useDebounced } from '../../app/useDebounced'
 import { OrdersTable, sortOrderRows, type OrderRow, type OrderSortKey } from './OrdersTable'
@@ -182,6 +185,11 @@ export function OrdersScreen() {
     }
   }
 
+  /** Exports every row the filters have selected, not just the page shown. */
+  function exportCsv() {
+    downloadCsv(`orders-${format(new Date(), 'yyyyMMdd')}.csv`, toCsv(ORDER_CSV_HEADER, orderCsvRows(sortedRows)))
+  }
+
   async function advance(o: Order, to: OrderStatus) {
     if (!currentUser) return
     await advanceOrderStatus(o.id, to, currentUser.id)
@@ -282,6 +290,11 @@ export function OrdersScreen() {
             {t('orders.dateClear')}
           </Button>
         )}
+        {/* Sits with the filters because that is what it exports: whatever
+            the chips, the search and these dates have narrowed to. */}
+        <Button variant="ghost" className="ml-auto !py-2 text-sm" disabled={sortedRows.length === 0} onClick={exportCsv}>
+          {t('orders.exportCsv', { n: sortedRows.length })}
+        </Button>
       </div>
 
       {view === 'board' ? (

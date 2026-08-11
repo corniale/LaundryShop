@@ -169,6 +169,27 @@ export function ReportsScreen() {
    */
   const byAddOn = useMemo(() => addOnTotals(rangeOrders, addOnTypes), [rangeOrders, addOnTypes])
 
+  /**
+   * What the shop billed in this range, and how it adds up. The Income
+   * headline is cash *collected* — payments dated in this range, whatever
+   * order they were for — so it will not equal this. These two figures
+   * answer different questions and used to sit unlabelled beside each
+   * other; the breakdown makes the difference explicit, and it is the only
+   * place a discount is visible at all.
+   */
+  const billed = useMemo(() => {
+    const services = rangeOrders.reduce(
+      (sum, o) => sum + o.lines.reduce((s, l) => s + l.lineTotalCentavos, 0),
+      0,
+    )
+    const addOns = rangeOrders.reduce(
+      (sum, o) => sum + o.addOns.reduce((s, a) => s + a.amountCentavos, 0),
+      0,
+    )
+    const discounts = rangeOrders.reduce((sum, o) => sum + o.discountCentavos, 0)
+    return { services, addOns, discounts, total: services + addOns - discounts }
+  }, [rangeOrders])
+
   // Top customers by spend (range)
   const topCustomers = useMemo(() => {
     const map = new Map<string, number>()
@@ -211,7 +232,13 @@ export function ReportsScreen() {
 
   function exportAll() {
     const rows: Array<Array<string | number>> = []
-    rows.push(['Income (range)', (incomeTotal / 100).toFixed(2)])
+    rows.push(['Collected (range)', (incomeTotal / 100).toFixed(2)])
+    rows.push([])
+    rows.push(['Billed (range)', ''])
+    rows.push(['Services', (billed.services / 100).toFixed(2)])
+    rows.push(['Add-ons', (billed.addOns / 100).toFixed(2)])
+    rows.push(['Discounts', (-billed.discounts / 100).toFixed(2)])
+    rows.push(['Total billed', (billed.total / 100).toFixed(2)])
     rows.push([])
     rows.push(['Service', 'Income', 'Kilos'])
     for (const [name, v] of byService) rows.push([name, (v.income / 100).toFixed(2), v.kilos.toFixed(1)])
@@ -241,6 +268,7 @@ export function ReportsScreen() {
       <Card>
         <div className="mb-1 text-xs font-medium text-ink-muted">{t('reports.income')}</div>
         <div className="font-mono text-xl font-medium text-positive-deep">{formatCentavos(incomeTotal)}</div>
+        <div className="mt-1 text-xs text-ink-muted">{t('reports.incomeNote')}</div>
       </Card>
 
       {/* Income over the chosen range */}
@@ -269,7 +297,8 @@ export function ReportsScreen() {
       </Card>
 
       <Card>
-        <h2 className="mb-2 font-display text-base font-semibold">{t('reports.byService')}</h2>
+        <h2 className="font-display text-base font-semibold">{t('reports.byService')}</h2>
+        <p className="mb-2 text-xs text-ink-muted">{t('reports.byServiceNote')}</p>
         {byService.length === 0 ? (
           <EmptyState>{t('reports.empty')}</EmptyState>
         ) : (
@@ -299,6 +328,34 @@ export function ReportsScreen() {
             }))}
           />
         )}
+      </Card>
+
+      {/* Services + add-ons − discounts, spelled out. Without this the bars
+          above look like they should sum to the headline, and they never can:
+          one is billed work, the other is collected cash. */}
+      <Card>
+        <h2 className="mb-2 font-display text-base font-semibold">{t('reports.billed')}</h2>
+        <dl className="flex flex-col gap-1.5 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-ink-muted">{t('reports.billedServices')}</dt>
+            <dd className="font-mono">{formatCentavos(billed.services)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-ink-muted">{t('reports.billedAddOns')}</dt>
+            <dd className="font-mono">{formatCentavos(billed.addOns)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-ink-muted">{t('reports.billedDiscounts')}</dt>
+            <dd className="font-mono text-attention-deep">
+              {billed.discounts > 0 ? `\u2212${formatCentavos(billed.discounts)}` : formatCentavos(0)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3 border-t border-line pt-1.5 font-medium">
+            <dt>{t('reports.billedTotal')}</dt>
+            <dd className="font-mono">{formatCentavos(billed.total)}</dd>
+          </div>
+        </dl>
+        <p className="mt-2 text-xs text-ink-muted">{t('reports.billedNote')}</p>
       </Card>
 
       {/* Two readings of the same customers — who spends and who owes — so
