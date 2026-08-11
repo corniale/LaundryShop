@@ -10,6 +10,7 @@ import type {
   User,
   Customer,
   Service,
+  AddOnType,
   Order,
   OrderLine,
   StatusEvent,
@@ -188,6 +189,30 @@ export async function saveService(
   return record
 }
 
+// ── Add-on catalogue ──────────────────────────────────────────────
+
+export async function listAddOnTypes(includeInactive = false): Promise<AddOnType[]> {
+  const all = await db.addOnTypes.orderBy('sortOrder').toArray()
+  return includeInactive ? all : all.filter((a) => a.active)
+}
+
+export async function saveAddOnType(
+  data: Omit<AddOnType, 'id' | 'updatedAt'> & { id?: string },
+  byUserId: string,
+): Promise<AddOnType> {
+  const peso = `₱${(data.defaultAmountCentavos / 100).toFixed(2)}`
+  if (data.id) {
+    const record = { ...data, id: data.id, updatedAt: now() } as AddOnType
+    await db.addOnTypes.put(record)
+    await audit(byUserId, 'update', 'addOnType', record.id, `Updated add-on ${record.name} (${peso})`)
+    return record
+  }
+  const record: AddOnType = { ...data, id: ulid(), updatedAt: now() }
+  await db.addOnTypes.add(record)
+  await audit(byUserId, 'create', 'addOnType', record.id, `Added add-on ${record.name} (${peso})`)
+  return record
+}
+
 // ── Orders ────────────────────────────────────────────────────────
 
 export interface NewOrderLineInput {
@@ -205,7 +230,7 @@ export interface NewOrderInput {
   /** One per service; at least one. */
   lines: NewOrderLineInput[]
   itemNotes?: string
-  addOns: Array<{ label: string; amountCentavos: number }>
+  addOns: Array<{ addOnTypeId?: string; label: string; amountCentavos: number }>
   discountCentavos: number
   discountReason?: string
   subtotalCentavos: number
@@ -598,6 +623,7 @@ export async function wipeDemoData(): Promise<void> {
       db.users,
       db.customers,
       db.services,
+      db.addOnTypes,
       db.orders,
       db.statusEvents,
       db.payments,
@@ -611,6 +637,7 @@ export async function wipeDemoData(): Promise<void> {
         db.users,
         db.customers,
         db.services,
+        db.addOnTypes,
         db.orders,
         db.statusEvents,
         db.payments,
@@ -637,6 +664,7 @@ export async function wipeAllData(): Promise<void> {
       db.users,
       db.customers,
       db.services,
+      db.addOnTypes,
       db.orders,
       db.statusEvents,
       db.payments,
@@ -653,6 +681,7 @@ export async function wipeAllData(): Promise<void> {
         db.users.clear(),
         db.customers.clear(),
         db.services.clear(),
+        db.addOnTypes.clear(),
         db.orders.clear(),
         db.statusEvents.clear(),
         db.payments.clear(),

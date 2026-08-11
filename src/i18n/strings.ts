@@ -153,6 +153,11 @@ const strings = {
   'orders.itemPrompt': { tl: 'Ilang piraso? Anong meron?', en: 'How many pieces? What is inside?' },
   'orders.addons': { tl: 'Mga dagdag', en: 'Add-ons' },
   'orders.addonLabel': { tl: 'Dagdag (hal. plastik, plantsa)', en: 'Add-on (e.g. bag, press)' },
+  'orders.addonOther': { tl: 'Iba pa', en: 'Something else' },
+  'orders.addonPickHint': {
+    tl: 'Pindutin ang dagdag. Nababago pa ang halaga.',
+    en: 'Tap an add-on. The amount is still editable.',
+  },
   'orders.discount': { tl: 'Diskwento', en: 'Discount' },
   'orders.discountReason': { tl: 'Dahilan ng diskwento', en: 'Discount reason' },
   'orders.total': { tl: 'Kabuuan', en: 'Total' },
@@ -277,6 +282,27 @@ const strings = {
   },
   'services.empty': { tl: 'Wala pang serbisyo.', en: 'No services yet.' },
 
+  // ── Add-on catalogue ───────────────────────────────────────────
+  'addons.title': { tl: 'Mga dagdag', en: 'Add-ons' },
+  'addons.hint': {
+    tl: 'Patong na bayad kada order — hindi kada kilo. Lalabas ito bilang pindutan sa bagong order.',
+    en: 'Flat charges added to a visit, not priced per kilo. These appear as buttons on a new order.',
+  },
+  'addons.add': { tl: 'Bagong dagdag', en: 'New add-on' },
+  'addons.name': { tl: 'Pangalan', en: 'Name' },
+  'addons.price': { tl: 'Karaniwang halaga', en: 'Usual amount' },
+  'addons.save': { tl: 'I-save ang dagdag', en: 'Save add-on' },
+  'addons.saved': { tl: 'Na-save ang dagdag.', en: 'Add-on saved.' },
+  'addons.priceNote': {
+    tl: 'Mababago pa ang halaga kada order. Hindi magbabago ang mga lumang order.',
+    en: 'The amount is still editable on each order. Past orders will not change.',
+  },
+  'addons.empty': { tl: 'Wala pang dagdag.', en: 'No add-ons yet.' },
+  'addons.orderFormNote': {
+    tl: 'Ito ang pagkakasunod ng mga dagdag sa bagong order.',
+    en: 'This is the order add-ons appear in on a new order.',
+  },
+
   // ── Payments ───────────────────────────────────────────────────
   'payments.title': { tl: 'Bayad', en: 'Payments' },
   'payments.collectedToday': { tl: 'Nakolekta ngayon', en: 'Collected today' },
@@ -395,6 +421,8 @@ const strings = {
   'reports.monthly': { tl: 'Buwanan', en: 'Monthly' },
   'reports.byService': { tl: 'Kita kada serbisyo', en: 'Income by service' },
   'reports.kilosByService': { tl: 'Kilo kada serbisyo', en: 'Kilos by service' },
+  'reports.byAddOn': { tl: 'Kita sa mga dagdag', en: 'Income from add-ons' },
+  'reports.addOnCount': { tl: { one: '{n} beses', other: '{n} beses' }, en: { one: '{n}×', other: '{n}×' } },
   'reports.topCustomers': { tl: 'Top na suki', en: 'Top customers' },
   'reports.withBalance': { tl: 'May balanse', en: 'With balance' },
   'reports.staff': { tl: 'Galaw ng staff', en: 'Staff activity' },

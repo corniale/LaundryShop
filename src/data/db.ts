@@ -1,10 +1,14 @@
 import Dexie, { type Table } from 'dexie'
+import { ulid } from 'ulid'
+import { deriveAddOnTypes } from '../domain/addOns'
 import type {
   Shop,
   User,
   Customer,
   Service,
+  AddOnType,
   Order,
+  OrderAddOn,
   StatusEvent,
   Payment,
   InventoryItem,
@@ -17,13 +21,14 @@ import type {
   Draft,
 } from './types'
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 export class LaundryDB extends Dexie {
   shop!: Table<Shop, string>
   users!: Table<User, string>
   customers!: Table<Customer, string>
   services!: Table<Service, string>
+  addOnTypes!: Table<AddOnType, string>
   orders!: Table<Order, string>
   statusEvents!: Table<StatusEvent, string>
   payments!: Table<Payment, string>
@@ -105,6 +110,22 @@ export class LaundryDB extends Dexie {
             delete o.itemCount
           })
       })
+
+    // v4: add-ons get a catalogue, so the counter picks a bag rather than
+    // spelling one. Existing orders keep their typed labels — those are
+    // snapshots — but they seed the catalogue, so a shop that has been open
+    // for months does not start this list from nothing.
+    this.version(4)
+      .stores({ addOnTypes: 'id, active, sortOrder' })
+      .upgrade(async (tx) => {
+        const orders = (await tx.table('orders').toArray()) as Array<{ addOns?: OrderAddOn[] }>
+        const derived = deriveAddOnTypes(
+          orders.map((o) => ({ addOns: o.addOns ?? [] })),
+          ulid,
+          new Date().toISOString(),
+        )
+        if (derived.length > 0) await tx.table('addOnTypes').bulkAdd(derived)
+      })
   }
 }
 
@@ -116,6 +137,7 @@ export const BACKUP_TABLES = [
   'users',
   'customers',
   'services',
+  'addOnTypes',
   'orders',
   'statusEvents',
   'payments',

@@ -17,12 +17,24 @@ async function makeBackup(schemaVersion = SCHEMA_VERSION) {
     users: [],
     customers: [],
     services: [],
+    // The add-on catalogue arrived in v4; before that add-ons were free text.
+    ...(schemaVersion < 4
+      ? {}
+      : {
+          addOnTypes: [
+            {
+              id: 'ao1', name: 'Plastic bag', defaultAmountCentavos: 1000,
+              active: true, sortOrder: 0, updatedAt: now,
+            },
+          ],
+        }),
     // v1/v2 orders held one service inline; v3 holds a list of lines.
     orders: [
       schemaVersion < 3
         ? {
             id: 'o1', code: 'ORD-0001', serviceId: 'sv1', serviceNameSnapshot: 'Wash & Fold',
-            pricePerKgSnapshot: 3500, kilos: 5, addOns: [], discountCentavos: 0,
+            pricePerKgSnapshot: 3500, kilos: 5,
+            addOns: [{ label: 'Plastic bag', amountCentavos: 1000 }], discountCentavos: 0,
             subtotalCentavos: 17500, totalCentavos: 17500, status: 'received' as const,
             receivedAt: now, promisedAt: now, createdBy: 'u1', updatedAt: now,
           }
@@ -32,7 +44,7 @@ async function makeBackup(schemaVersion = SCHEMA_VERSION) {
               serviceId: 'sv1', serviceNameSnapshot: 'Wash & Fold', pricePerKgSnapshot: 3500,
               kilos: 5, billedKilos: 5, lineTotalCentavos: 17500,
             }],
-            addOns: [], discountCentavos: 0,
+            addOns: [{ label: 'Plastic bag', amountCentavos: 1000 }], discountCentavos: 0,
             subtotalCentavos: 17500, totalCentavos: 17500, status: 'received' as const,
             receivedAt: now, promisedAt: now, createdBy: 'u1', updatedAt: now,
           },
@@ -117,6 +129,7 @@ describe('schema migration', () => {
     const { backup, notes } = migrateBackup(result.backup)
     expect(notes).toEqual([])
     expect(backup.data.expectedUseRules[0].basis).toBe('piece')
+    expect(backup.data.addOnTypes).toHaveLength(1)
   })
 
   it('turns a v2 order into a single-line order (v2 → v3)', async () => {
@@ -142,13 +155,26 @@ describe('schema migration', () => {
     expect(notes.join(' ')).toMatch(/one line per service/i)
   })
 
-  it('carries a v1 order all the way through both steps', async () => {
+  it('builds an add-on catalogue out of past add-ons (v3 \u2192 v4)', async () => {
+    const result = await validateBackupJson(JSON.stringify(await makeBackup(3)))
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    const { backup, notes } = migrateBackup(result.backup)
+    expect(backup.data.addOnTypes).toEqual([
+      expect.objectContaining({ name: 'Plastic bag', defaultAmountCentavos: 1000, active: true, sortOrder: 0 }),
+    ])
+    expect(notes.join(' ')).toMatch(/add-on list/i)
+  })
+
+  it('carries a v1 order all the way through every step', async () => {
     const result = await validateBackupJson(JSON.stringify(await makeBackup(1)))
     expect(result.ok).toBe(true)
     if (!result.ok) return
     const { backup, notes } = migrateBackup(result.backup)
     expect(backup.data.orders[0].lines).toHaveLength(1)
     expect(backup.data.expectedUseRules[0].basis).toBe('kg')
-    expect(notes).toHaveLength(2)
+    expect(backup.data.addOnTypes).toHaveLength(1)
+    expect(notes).toHaveLength(3)
   })
 })

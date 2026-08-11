@@ -52,7 +52,9 @@ export async function executeRestore(backup: BackupFile, mode: RestoreMode): Pro
   const tables = BACKUP_TABLES.map((t) => db.table(t))
   await db.transaction('rw', tables, async () => {
     for (const name of BACKUP_TABLES) {
-      const incoming = backup.data[name] as Array<{ id: string; updatedAt?: string }>
+      // ?? [] covers a table a migration left absent — every restore runs
+      // through migrateBackup first, but a missing table must not throw.
+      const incoming = (backup.data[name] ?? []) as Array<{ id: string; updatedAt?: string }>
       const table = db.table(name)
       if (mode === 'replace') {
         await table.clear()

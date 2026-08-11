@@ -21,6 +21,7 @@ import { t } from '../../i18n/strings'
 import { formatCentavos } from '../../domain/money'
 import { balanceCentavos } from '../../domain/payments'
 import { allLines } from '../../domain/orders'
+import { addOnTotals } from '../../domain/addOns'
 import { Card, Button, EmptyState } from '../../components/ui'
 import { DataTable } from '../../components/DataTable'
 import { DateRangePicker, useDateRange } from '../../components/DateRangePicker'
@@ -78,6 +79,7 @@ export function ReportsScreen() {
   const customers = useLiveQuery(() => db.customers.toArray(), []) ?? []
   const users = useLiveQuery(() => db.users.toArray(), []) ?? []
   const statusEvents = useLiveQuery(() => db.statusEvents.toArray(), []) ?? []
+  const addOnTypes = useLiveQuery(() => db.addOnTypes.toArray(), []) ?? []
 
   const liveOrders = useMemo(() => orders.filter((o) => !o.voidedAt), [orders])
   const rangeOrders = useMemo(() => liveOrders.filter((o) => inRange(o.receivedAt, range.from, range.to)), [liveOrders, range])
@@ -160,6 +162,13 @@ export function ReportsScreen() {
     return [...map.entries()].sort((a, b) => b[1].income - a[1].income)
   }, [rangeOrders])
 
+  /**
+   * Add-ons (range). Grouped by catalogue entry where there is one, so a
+   * bag charged from the chip and a bag typed by hand before the catalogue
+   * existed still read as bags rather than as two lines.
+   */
+  const byAddOn = useMemo(() => addOnTotals(rangeOrders, addOnTypes), [rangeOrders, addOnTypes])
+
   // Top customers by spend (range)
   const topCustomers = useMemo(() => {
     const map = new Map<string, number>()
@@ -206,6 +215,9 @@ export function ReportsScreen() {
     rows.push([])
     rows.push(['Service', 'Income', 'Kilos'])
     for (const [name, v] of byService) rows.push([name, (v.income / 100).toFixed(2), v.kilos.toFixed(1)])
+    rows.push([])
+    rows.push(['Add-on', 'Times used', 'Income'])
+    for (const a of byAddOn) rows.push([a.name, a.count, (a.incomeCentavos / 100).toFixed(2)])
     rows.push([])
     rows.push(['Top customer', 'Spend'])
     for (const c of topCustomers) rows.push([c.name, (c.spend / 100).toFixed(2)])
@@ -271,6 +283,21 @@ export function ReportsScreen() {
           <EmptyState>{t('reports.empty')}</EmptyState>
         ) : (
           <BarList rows={byService.map(([name, v]) => ({ label: name, value: v.kilos, display: `${v.kilos.toFixed(1)} kg` }))} />
+        )}
+      </Card>
+
+      <Card>
+        <h2 className="mb-2 font-display text-base font-semibold">{t('reports.byAddOn')}</h2>
+        {byAddOn.length === 0 ? (
+          <EmptyState>{t('reports.empty')}</EmptyState>
+        ) : (
+          <BarList
+            rows={byAddOn.map((a) => ({
+              label: a.name,
+              value: a.incomeCentavos,
+              display: `${formatCentavos(a.incomeCentavos)} · ${t('reports.addOnCount', { n: a.count })}`,
+            }))}
+          />
         )}
       </Card>
 

@@ -33,7 +33,7 @@ interface DraftState {
   /** One per service in this drop-off; always at least one row. */
   lines: Array<{ serviceId?: string; kilos: string; itemCount: string }>
   itemNotes: string
-  addOns: Array<{ label: string; amount: string }>
+  addOns: Array<{ addOnTypeId?: string; label: string; amount: string }>
   discount: string
   discountReason: string
   promisedAt: string
@@ -65,6 +65,7 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
   const toast = useToast()
   const services = useLiveQuery(() => db.services.filter((s) => s.active).sortBy('sortOrder'), []) ?? []
   const customers = useLiveQuery(() => db.customers.filter((c) => !c.archivedAt).toArray(), []) ?? []
+  const addOnTypes = useLiveQuery(() => db.addOnTypes.filter((a) => a.active).sortBy('sortOrder'), []) ?? []
 
   const [draft, setDraft] = useState<DraftState>(emptyDraft)
   const [customerSearch, setCustomerSearch] = useState('')
@@ -193,7 +194,11 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
         itemNotes: draft.itemNotes.trim() || undefined,
         addOns: draft.addOns
           .filter((a) => a.label.trim() && (parsePesosInput(a.amount) ?? 0) > 0)
-          .map((a) => ({ label: a.label.trim(), amountCentavos: parsePesosInput(a.amount) ?? 0 })),
+          .map((a) => ({
+            addOnTypeId: a.addOnTypeId,
+            label: a.label.trim(),
+            amountCentavos: parsePesosInput(a.amount) ?? 0,
+          })),
         discountCentavos: parsePesosInput(draft.discount) ?? 0,
         discountReason: draft.discountReason.trim() || undefined,
         subtotalCentavos: pricing.subtotalCentavos,
@@ -403,22 +408,67 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
       {/* 5 · Add-ons + discount */}
       <section>
         <div className="mb-1 text-sm font-medium text-ink-muted">{t('orders.addons')}</div>
+        {/* Catalogue first — the common charges are one tap and cannot be
+            misspelt. Tapping again takes the row back off. Free text stays
+            below for the genuine one-off. */}
+        {addOnTypes.length > 0 && (
+          <>
+            <div className="mb-2 flex flex-wrap gap-2">
+              {addOnTypes.map((type) => (
+                <Chip
+                  key={type.id}
+                  selected={draft.addOns.some((a) => a.addOnTypeId === type.id)}
+                  onClick={() =>
+                    setDraft((d) =>
+                      d.addOns.some((a) => a.addOnTypeId === type.id)
+                        ? { ...d, addOns: d.addOns.filter((a) => a.addOnTypeId !== type.id) }
+                        : {
+                            ...d,
+                            addOns: [
+                              ...d.addOns,
+                              {
+                                addOnTypeId: type.id,
+                                label: type.name,
+                                amount: (type.defaultAmountCentavos / 100).toFixed(2),
+                              },
+                            ],
+                          },
+                    )
+                  }
+                >
+                  {type.name}
+                  <span className="ml-1 font-mono text-xs opacity-70">
+                    {formatCentavos(type.defaultAmountCentavos)}
+                  </span>
+                </Chip>
+              ))}
+            </div>
+            <p className="mb-2 text-xs text-ink-muted">{t('orders.addonPickHint')}</p>
+          </>
+        )}
         {draft.addOns.map((a, i) => (
-          <div key={i} className="mb-2 flex gap-2">
-            <Input
-              placeholder={t('orders.addonLabel')}
-              value={a.label}
-              onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  addOns: d.addOns.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
-                }))
-              }
-            />
+          <div key={i} className="mb-2 flex items-center gap-2">
+            {/* A catalogue row is named by its chip, so the name is shown
+                rather than typed — retyping it there would only break the
+                link back to the chip. The amount stays editable either way. */}
+            {a.addOnTypeId ? (
+              <span className="min-h-touch flex min-w-0 flex-1 items-center truncate text-sm font-medium">{a.label}</span>
+            ) : (
+              <Input
+                placeholder={t('orders.addonLabel')}
+                value={a.label}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    addOns: d.addOns.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
+                  }))
+                }
+              />
+            )}
             <Input
               placeholder="₱"
               inputMode="decimal"
-              className="w-28 font-mono"
+              className="!w-28 flex-none font-mono"
               value={a.amount}
               onChange={(e) =>
                 setDraft((d) => ({
@@ -437,7 +487,7 @@ export function OrderIntake({ onSaved, onClose }: { onSaved: (orderId: string, c
           </div>
         ))}
         <Button variant="ghost" className="!py-2 text-sm" onClick={() => setDraft((d) => ({ ...d, addOns: [...d.addOns, { label: '', amount: '' }] }))}>
-          + {t('common.add')}
+          + {addOnTypes.length > 0 ? t('orders.addonOther') : t('common.add')}
         </Button>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <Field label={t('orders.discount')}>
