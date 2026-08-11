@@ -120,6 +120,15 @@ const strings = {
   'backup.done': { tl: 'Na-backup na ang data.', en: 'Backup saved.' },
   'backup.failed': { tl: 'Hindi natapos ang backup. Subukan ulit.', en: 'Backup failed. Try again.' },
 
+  // ── Update ─────────────────────────────────────────────────────
+  'update.ready': { tl: 'May bagong bersyon ng app.', en: 'A new version of the app is ready.' },
+  'update.willReopen': {
+    tl: 'Magbubukas ulit ang app at hihingi ng PIN. Ligtas ang lahat ng records.',
+    en: 'The app will reopen and ask for your PIN. Your records are untouched.',
+  },
+  'update.action': { tl: 'I-update ngayon', en: 'Update now' },
+  'update.later': { tl: 'Mamaya na', en: 'Later' },
+
   // ── Orders ─────────────────────────────────────────────────────
   'orders.title': { tl: 'Orders', en: 'Orders' },
   'orders.new': { tl: 'Bagong Order', en: 'New Order' },
@@ -576,6 +585,11 @@ const strings = {
   'settings.messageTemplate': { tl: 'Template ng "handa na" message', en: '"Ready" message template' },
   'settings.save': { tl: 'I-save ang settings', en: 'Save settings' },
   'settings.saved': { tl: 'Na-save ang settings.', en: 'Settings saved.' },
+  'settings.about': { tl: 'Tungkol sa app', en: 'About this app' },
+  'settings.aboutHelp': {
+    tl: 'Sabihin ang linyang ito kapag tumatawag para sa tulong.',
+    en: 'Read this line out when you call for help.',
+  },
   'settings.dangerZone': { tl: 'Delikadong bahagi', en: 'Danger zone' },
   'settings.resetAll': { tl: 'Burahin lahat ng data', en: 'Reset all data' },
   'settings.resetWarning': {
