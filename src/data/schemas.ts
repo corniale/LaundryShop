@@ -64,6 +64,16 @@ export const serviceSchema = z.object({
   updatedAt: iso,
 })
 
+export const addOnTypeSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1),
+  defaultAmountCentavos: nonNegCentavos,
+  active: z.boolean(),
+  sortOrder: z.number(),
+  demo: z.boolean().optional(),
+  updatedAt: iso,
+})
+
 export const orderStatusSchema = z.enum(['received', 'washing', 'drying', 'ready', 'claimed'])
 
 export const orderLineSchema = z.object({
@@ -92,7 +102,9 @@ export const orderSchema = z.object({
   kilos: z.number().min(0).optional(),
   itemCount: z.number().int().min(0).optional(),
   itemNotes: z.string().optional(),
-  addOns: z.array(z.object({ label: z.string(), amountCentavos: centavos })),
+  addOns: z.array(
+    z.object({ addOnTypeId: z.string().optional(), label: z.string(), amountCentavos: centavos }),
+  ),
   discountCentavos: nonNegCentavos,
   discountReason: z.string().optional(),
   subtotalCentavos: centavos,
@@ -202,6 +214,9 @@ export const backupFileSchema = z.object({
     users: z.array(userSchema),
     customers: z.array(customerSchema),
     services: z.array(serviceSchema),
+    // Optional here and always present after migrateBackup: a v1–v3 backup
+    // predates the catalogue, and the migration derives one from its orders.
+    addOnTypes: z.array(addOnTypeSchema).optional(),
     orders: z.array(orderSchema),
     statusEvents: z.array(statusEventSchema),
     payments: z.array(paymentSchema),

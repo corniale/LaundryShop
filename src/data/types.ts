@@ -70,7 +70,28 @@ export interface Service {
   updatedAt: string
 }
 
+/**
+ * A charge the shop makes often enough to be worth naming once — a plastic
+ * bag, a rush fee, delivery. Flat pesos attached to a visit, which is what
+ * separates it from a Service: no kilos, no turnaround, no expected-use rule.
+ */
+export interface AddOnType {
+  id: string
+  name: string
+  defaultAmountCentavos: number
+  active: boolean
+  sortOrder: number
+  demo?: boolean
+  updatedAt: string
+}
+
 export interface OrderAddOn {
+  /**
+   * Set when the add-on came from the catalogue, absent for a one-off typed
+   * at the counter. The label and the amount are snapshots either way —
+   * renaming or repricing a catalogue entry never restates a past order.
+   */
+  addOnTypeId?: string
   label: string
   amountCentavos: number
 }

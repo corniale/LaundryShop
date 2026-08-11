@@ -2,8 +2,10 @@
  * Backup validation — every restore is checked before a single record is
  * written: shape (zod), checksum (SHA-256), and schema version direction.
  */
+import { ulid } from 'ulid'
 import { backupFileSchema, type BackupFile } from '../data/schemas'
 import { SCHEMA_VERSION } from '../data/db'
+import { deriveAddOnTypes } from '../domain/addOns'
 import { sha256Hex } from './serialize'
 
 export type ValidationResult =
@@ -84,6 +86,16 @@ export function migrateBackup(backup: BackupFile): { backup: BackupFile; notes: 
           touched++
         }
         if (touched > 0) notes.push(`Orders now hold one line per service (${touched})`)
+        break
+      }
+      case 3: {
+        // v3 add-ons were free text. The labels already in the file are the
+        // best possible starting catalogue, so build it from them.
+        if (!backup.data.addOnTypes) {
+          const derived = deriveAddOnTypes(backup.data.orders, ulid, backup.createdAt)
+          backup.data.addOnTypes = derived
+          if (derived.length > 0) notes.push(`Add-on list built from past orders (${derived.length})`)
+        }
         break
       }
       default:

@@ -10,7 +10,9 @@ import type {
   User,
   Customer,
   Service,
+  AddOnType,
   Order,
+  OrderAddOn,
   StatusEvent,
   Payment,
   InventoryItem,
@@ -107,6 +109,23 @@ export async function seedDemoData(): Promise<void> {
     updatedAt: shop.createdAt,
   }))
 
+  // ── Add-on catalogue ──
+  const addOnDefs: Array<[string, number]> = [
+    ['Plastic bag', 1000],
+    ['Rush (same day)', 5000],
+    ['Delivery', 4000],
+    ['Extra fabric conditioner', 2000],
+  ]
+  const addOnTypes: AddOnType[] = addOnDefs.map(([name, amount], i) => ({
+    id: ulid(),
+    name,
+    defaultAmountCentavos: amount,
+    active: true,
+    sortOrder: i,
+    demo: true,
+    updatedAt: shop.createdAt,
+  }))
+
   // ── Customers ──
   const customerDefs: Array<[string, string, string]> = [
     ['Maria Santos', '0917 123 4567', 'Purok 2, Brgy. San Isidro'],
@@ -181,8 +200,13 @@ export async function seedDemoData(): Promise<void> {
     const receivedAt = new Date(
       today.getTime() - opts.daysAgo * DAY + Math.floor(rand() * 8) * 3600_000,
     )
-    const addOns =
-      rand() < 0.25 ? [{ label: 'Plastic bag', amountCentavos: 1000 }] : []
+    // Add-ons come off the catalogue, the way the counter picks them.
+    const addOns: OrderAddOn[] = []
+    for (const type of addOnTypes) {
+      if (rand() < (type.sortOrder === 0 ? 0.25 : 0.08)) {
+        addOns.push({ addOnTypeId: type.id, label: type.name, amountCentavos: type.defaultAmountCentavos })
+      }
+    }
     const discount = rand() < 0.1 ? 2000 : 0
     const parts = [{ service: svc, kilos: opts.kilos }, ...(opts.also ? [opts.also] : [])]
     const pricing = priceOrder({
@@ -425,7 +449,7 @@ export async function seedDemoData(): Promise<void> {
   await db.transaction(
     'rw',
     [
-      db.shop, db.users, db.customers, db.services, db.orders, db.statusEvents,
+      db.shop, db.users, db.customers, db.services, db.addOnTypes, db.orders, db.statusEvents,
       db.payments, db.inventoryItems, db.inventoryMoves, db.auditEntries,
       db.backupMeta, db.appMeta,
     ],
@@ -434,6 +458,7 @@ export async function seedDemoData(): Promise<void> {
       await db.users.bulkPut([owner, staff])
       await db.customers.bulkPut(customers)
       await db.services.bulkPut(services)
+      await db.addOnTypes.bulkPut(addOnTypes)
       await db.orders.bulkPut(orders)
       await db.statusEvents.bulkPut(statusEvents)
       await db.payments.bulkPut(payments)

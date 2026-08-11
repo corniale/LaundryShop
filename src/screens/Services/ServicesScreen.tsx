@@ -2,10 +2,10 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../data/db'
-import type { Service } from '../../data/types'
+import type { AddOnType, Service } from '../../data/types'
 import { t } from '../../i18n/strings'
 import { formatCentavos, parsePesosInput } from '../../domain/money'
-import { saveService } from '../../data/repository'
+import { saveAddOnType, saveService } from '../../data/repository'
 import { useAuth } from '../../app/AuthContext'
 import { useToast } from '../../components/Toast'
 import { Button, Sheet, Field, Input } from '../../components/ui'
@@ -80,6 +80,161 @@ function ActiveSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     >
       <span className={`block h-5 w-5 rounded-pill bg-surface transition-transform ${on ? 'translate-x-5' : ''}`} />
     </button>
+  )
+}
+
+/**
+ * The add-on catalogue lives on this screen because it is the same job: a
+ * price list the counter picks from. It is kept a separate table rather than
+ * a column on Services, because an add-on has no kilos and no turnaround —
+ * the two lists genuinely have different shapes.
+ */
+function AddOnsSection() {
+  const toast = useToast()
+  const { currentUser } = useAuth()
+  const addOns = useLiveQuery(() => db.addOnTypes.orderBy('sortOrder').toArray(), []) ?? []
+  const [editing, setEditing] = useState<AddOnType | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', amount: '' })
+
+  const byOrder = [...addOns].sort((a, b) => a.sortOrder - b.sortOrder)
+  const rankOf = (a: AddOnType) => byOrder.findIndex((x) => x.id === a.id)
+
+  function openAdd() {
+    setEditing(null)
+    setForm({ name: '', amount: '' })
+    setFormOpen(true)
+  }
+
+  function openEdit(a: AddOnType) {
+    setEditing(a)
+    setForm({ name: a.name, amount: (a.defaultAmountCentavos / 100).toFixed(2) })
+    setFormOpen(true)
+  }
+
+  async function save() {
+    if (!currentUser) return
+    const amount = parsePesosInput(form.amount)
+    if (!form.name.trim() || amount === null) return
+    await saveAddOnType(
+      {
+        id: editing?.id,
+        name: form.name.trim(),
+        defaultAmountCentavos: amount,
+        active: editing?.active ?? true,
+        sortOrder: editing?.sortOrder ?? addOns.length,
+      },
+      currentUser.id,
+    )
+    toast({ message: t('addons.saved') })
+    setFormOpen(false)
+  }
+
+  async function move(a: AddOnType, dir: -1 | 1) {
+    if (!currentUser) return
+    const i = rankOf(a)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= byOrder.length) return
+    await saveAddOnType({ ...byOrder[i], sortOrder: byOrder[j].sortOrder }, currentUser.id)
+    await saveAddOnType({ ...byOrder[j], sortOrder: byOrder[i].sortOrder }, currentUser.id)
+  }
+
+  async function toggleActive(a: AddOnType) {
+    if (!currentUser) return
+    await saveAddOnType({ ...a, active: !a.active }, currentUser.id)
+  }
+
+  const columns: Array<Column<AddOnType>> = [
+    {
+      key: 'name',
+      header: t('addons.name'),
+      sortValue: (a) => a.name.toLowerCase(),
+      defaultDesc: false,
+      render: (a) => <span className={`font-medium ${a.active ? '' : 'text-ink-muted'}`}>{a.name}</span>,
+    },
+    {
+      key: 'amount',
+      header: t('addons.price'),
+      align: 'right',
+      sortValue: (a) => a.defaultAmountCentavos,
+      render: (a) => <span className="whitespace-nowrap font-mono">{formatCentavos(a.defaultAmountCentavos)}</span>,
+    },
+    {
+      key: 'order',
+      header: t('services.displayOrder'),
+      sortValue: (a) => a.sortOrder,
+      defaultDesc: false,
+      render: (a, sort) => (
+        <OrderCell
+          index={rankOf(a)}
+          count={byOrder.length}
+          live={sort.sortKey === 'order' && !sort.sortDesc}
+          onMove={(dir) => void move(a, dir)}
+        />
+      ),
+    },
+    {
+      key: 'active',
+      header: t('services.active'),
+      align: 'right',
+      sortValue: (a) => (a.active ? 1 : 0),
+      render: (a) => <ActiveSwitch on={a.active} onToggle={() => void toggleActive(a)} />,
+    },
+  ]
+
+  return (
+    <section className="mt-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-base font-semibold">{t('addons.title')}</h2>
+        <Button variant="ghost" className="!py-2 text-sm" onClick={openAdd}>
+          + {t('addons.add')}
+        </Button>
+      </div>
+      <p className="-mt-1 text-xs text-ink-muted">{t('addons.hint')}</p>
+
+      <DataTable
+        rows={addOns}
+        columns={columns}
+        getRowKey={(a) => a.id}
+        initialSortKey="order"
+        initialSortDesc={false}
+        onRowClick={openEdit}
+        emptyText={t('addons.empty')}
+        renderCard={(a) => (
+          <>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className={`font-medium ${a.active ? '' : 'text-ink-muted'}`}>{a.name}</span>
+              <span className="whitespace-nowrap font-mono text-sm">{formatCentavos(a.defaultAmountCentavos)}</span>
+            </div>
+            <div className="mt-1 flex items-center justify-end gap-1">
+              <OrderCell index={rankOf(a)} count={byOrder.length} live onMove={(dir) => void move(a, dir)} />
+              <ActiveSwitch on={a.active} onToggle={() => void toggleActive(a)} />
+            </div>
+          </>
+        )}
+      />
+      <p className="text-xs text-ink-muted">{t('addons.orderFormNote')}</p>
+
+      <Sheet open={formOpen} onClose={() => setFormOpen(false)} title={editing ? t('orders.edit') : t('addons.add')}>
+        <div className="flex flex-col gap-3">
+          <Field label={t('addons.name')}>
+            <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          </Field>
+          <Field label={t('addons.price')}>
+            <Input
+              inputMode="decimal"
+              className="font-mono"
+              value={form.amount}
+              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+            />
+          </Field>
+          <p className="rounded-input bg-primary-soft p-3 text-sm text-primary-deep">{t('addons.priceNote')}</p>
+          <Button disabled={!form.name.trim() || parsePesosInput(form.amount) === null} onClick={() => void save()}>
+            {t('addons.save')}
+          </Button>
+        </div>
+      </Sheet>
+    </section>
   )
 }
 
@@ -255,6 +410,8 @@ export function ServicesScreen() {
         )}
       />
       <p className="text-xs text-ink-muted">{t('services.orderFormNote')}</p>
+
+      <AddOnsSection />
 
       <Sheet open={formOpen} onClose={() => setFormOpen(false)} title={editing ? t('orders.edit') : t('services.add')}>
         <div className="flex flex-col gap-3">
