@@ -15,6 +15,7 @@ import { db } from '../data/db'
 import { t } from '../i18n/strings'
 import { clientConfig } from '../config/client.config'
 import { Icon, type IconName } from '../components/Icons'
+import { UpdateBanner } from './UpdateBanner'
 
 const tabs = [
   { to: '/today', key: 'tab.today', icon: 'today' },
@@ -97,10 +98,14 @@ export function TabShell() {
         </div>
       </nav>
 
-      {/* Content, capped at 1200px on desktop */}
-      <main className="mx-auto w-full max-w-[1200px] flex-1 pb-20 md:pb-4">
-        <Outlet />
-      </main>
+      {/* Content, capped at 1200px on desktop. The update offer sits above
+          everything because it is true on every screen, not just Today. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <UpdateBanner />
+        <main className="mx-auto w-full max-w-[1200px] flex-1 pb-20 md:pb-4">
+          <Outlet />
+        </main>
+      </div>
 
       {/* Bottom tab bar — phones */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface pb-safe md:hidden">

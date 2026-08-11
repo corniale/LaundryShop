@@ -7,6 +7,8 @@ import { t, setLocale } from '../../i18n/strings'
 import { updateShop, wipeAllData, updateAppMeta } from '../../data/repository'
 import { runBackup } from '../../backup/destinations'
 import { useAuth } from '../../app/AuthContext'
+import { buildLabel } from '../../app/build'
+import { clientConfig } from '../../config/client.config'
 import { useToast } from '../../components/Toast'
 import { Card, Button, Field, Input, TextArea, Chip, Sheet } from '../../components/ui'
 import { ThemePicker } from './ThemePicker'
@@ -163,6 +165,17 @@ export function SettingsScreen() {
       <Button variant="secondary" onClick={() => navigate('/more/backup')}>
         {t('more.backup')} ›
       </Button>
+
+      {/* Stamped at build time. Support cannot help someone who cannot say
+          which build they are on, and nobody can read a hash off a phone
+          unless it is written down somewhere findable. */}
+      <Card>
+        <h2 className="font-display text-base font-semibold">{t('settings.about')}</h2>
+        <p className="mb-2 mt-0.5 text-sm text-ink-muted">{t('settings.aboutHelp')}</p>
+        <div className="select-all rounded-input bg-wash px-3 py-2 font-mono text-sm">
+          {clientConfig.appName} {buildLabel()}
+        </div>
+      </Card>
 
       <Card className="border border-attention">
         <h2 className="mb-2 font-display text-base font-semibold text-attention-deep">{t('settings.dangerZone')}</h2>
