@@ -153,6 +153,10 @@ const strings = {
   'orders.itemPrompt': { tl: 'Ilang piraso? Anong meron?', en: 'How many pieces? What is inside?' },
   'orders.addons': { tl: 'Mga dagdag', en: 'Add-ons' },
   'orders.addonLabel': { tl: 'Dagdag (hal. plastik, plantsa)', en: 'Add-on (e.g. bag, press)' },
+  'orders.exportCsv': {
+    tl: { one: 'I-export ang {n} order', other: 'I-export ang {n} order' },
+    en: { one: 'Export {n} order', other: 'Export {n} orders' },
+  },
   'orders.addonOther': { tl: 'Iba pa', en: 'Something else' },
   'orders.addonPickHint': {
     tl: 'Pindutin ang dagdag. Nababago pa ang halaga.',
@@ -421,6 +425,23 @@ const strings = {
   'reports.monthly': { tl: 'Buwanan', en: 'Monthly' },
   'reports.byService': { tl: 'Kita kada serbisyo', en: 'Income by service' },
   'reports.kilosByService': { tl: 'Kilo kada serbisyo', en: 'Kilos by service' },
+  'reports.incomeNote': {
+    tl: 'Perang natanggap sa panahong ito, kahit anong order.',
+    en: 'Cash collected in this range, whichever order it was for.',
+  },
+  'reports.byServiceNote': {
+    tl: 'Halaga ng serbisyo lang. Nasa Siningil sa ibaba ang dagdag at diskwento.',
+    en: 'Service value only. Add-ons and discounts are in Billed, below.',
+  },
+  'reports.billed': { tl: 'Siningil sa panahong ito', en: 'Billed in this range' },
+  'reports.billedServices': { tl: 'Mga serbisyo', en: 'Services' },
+  'reports.billedAddOns': { tl: 'Mga dagdag', en: 'Add-ons' },
+  'reports.billedDiscounts': { tl: 'Mga diskwento', en: 'Discounts' },
+  'reports.billedTotal': { tl: 'Kabuuang siningil', en: 'Total billed' },
+  'reports.billedNote': {
+    tl: 'Halaga ng mga order na natanggap sa panahong ito. Hindi ito katumbas ng Kita sa itaas — perang nakolekta iyon, kahit para sa lumang order.',
+    en: 'The value of orders received in this range. It will not equal Income above — that is cash collected, including on older orders.',
+  },
   'reports.byAddOn': { tl: 'Kita sa mga dagdag', en: 'Income from add-ons' },
   'reports.addOnCount': { tl: { one: '{n} beses', other: '{n} beses' }, en: { one: '{n}×', other: '{n}×' } },
   'reports.topCustomers': { tl: 'Top na suki', en: 'Top customers' },
